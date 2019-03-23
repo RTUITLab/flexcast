@@ -22,11 +22,13 @@ export default class CSampleList extends Vue {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  background-color: #003840;
+  height: 100%;
 
   .track-item {
     margin: 4px;
     padding: 20px;
-    background-color: #2f3045;
+    background-color: #03282D;
   }
 }
 </style>

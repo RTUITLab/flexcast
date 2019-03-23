@@ -58,6 +58,10 @@ export default class CWaveForm extends Vue {
       });
 
       this.wavesurfer.load(this.sample.url);
+
+      this.wavesurfer.on('ready', () => {
+        this.$emit('waveformReady');
+      });
     });
   }
 

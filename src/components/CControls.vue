@@ -39,7 +39,7 @@ export default class CControls extends Vue {
   }
 
   zoomChanged(value: Number) {
-    this.$emit('zoomChanged', this.zoom);
+    this.$emit('zoomChanged', Number(this.zoom));
   }
 }
 </script>
