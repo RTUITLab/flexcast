@@ -1,5 +1,9 @@
 import { Sample } from './Sample';
 import axios from 'axios';
+import { analyze } from 'web-audio-beat-detector';
+import { Analyzer } from './Analyzer';
+
+
 
 export class Composer {
 
@@ -14,9 +18,13 @@ export class Composer {
             }
         });
         var downloadTasks = await Promise.all(downloaded.map(a => a.promise.then(r => this.context.decodeAudioData(r.data))));
-        setInterval(() => console.log("aed"), 1000);
+        setInterval(() => console.log("timer"), 1000);
         for (let index = 0; index < downloadTasks.length; index++) {
             const element = downloadTasks[index];
+            var myanalyser = new Analyzer(this.context, element);
+            const beats = await myanalyser.Analyze(10);
+            console.log(beats);
+            
             const source = this.context.createBufferSource();
             source.buffer = element;
             source.connect(this.context.destination);

@@ -42,12 +42,12 @@ export default class Home extends Vue {
 
   get timelines() {
     return [
-      [
-        {
-          offset: 0,
-          url: 'https://files.rtuitlab.ru/green-light.mp3'
-        }
-      ],
+      // [
+      //   {
+      //     offset: 0,
+      //     url: 'https://files.rtuitlab.ru/green-light.mp3'
+      //   }
+      // ],
       [
         {
           offset: 4,
