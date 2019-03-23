@@ -17,6 +17,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import CControls from '@/components/CControls.vue';
 import CSampleList from '@/components/CSampleList.vue';
 import CTimeLine from '@/components/CTimeLine.vue';
+import { Composer } from '@/model/Composer';
 
 import { Sample } from '@/model/Sample';
 
@@ -34,27 +35,22 @@ export default class Home extends Vue {
     this.zoom = zoom;
   }
 
+  async created() {
+    const composer = new Composer();
+    composer.Run(this.timelines.flatMap(s => s[0]));
+  }
+
   get timelines() {
     return [
       [
         {
           offset: 0,
-          url: 'test/test.mp3'
+          url: 'https://files.rtuitlab.ru/green-light.mp3'
         }
       ],
       [
         {
-          offset: 1,
-          url: 'https://files.rtuitlab.ru/subaru.mp3'
-        },
-        {
-          offset: 300,
-          url: 'https://files.rtuitlab.ru/subaru.mp3'
-        }
-      ],
-      [
-        {
-          offset: 2,
+          offset: 4,
           url: 'https://files.rtuitlab.ru/subaru.mp3'
         }
       ]
