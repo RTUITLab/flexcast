@@ -1,18 +1,15 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es5",
     "module": "esnext",
     "strict": true,
-    "jsx": "preserve",
     "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "esModuleInterop": true,
-    "typeRoots": ["node_modules/@types", "src/typings"],
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
+    "typeRoots": ["node_modules/@types", "src/typings"],
     "baseUrl": ".",
-    "types": ["webpack-env"],
     "paths": {
       "@/*": ["src/*"]
     },

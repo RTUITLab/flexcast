@@ -3,14 +3,15 @@
     <div class="sidebar">
       <c-sample-list class="sidebar-item"></c-sample-list>
 
-      <c-controls class="sidebar-item"/>
+      <c-controls class="sidebar-item" @zoomChanged="handleZoom"/>
     </div>
 
     <div class="timelines">
       <c-timeline
         v-for="(samples, index) in timelines"
-        :samples="samples"
         :key="`timeline-${index}`"
+        :samples="samples"
+        :pps="zoom"
       />
     </div>
   </div>
@@ -32,7 +33,13 @@ import { Sample } from '@/model/Sample';
   }
 })
 export default class Home extends Vue {
+  private zoom: number = 50;
+
   mounted() {}
+
+  handleZoom(zoom: number) {
+    this.zoom = zoom;
+  }
 
   get timelines() {
     return [
@@ -44,13 +51,17 @@ export default class Home extends Vue {
       ],
       [
         {
+          offset: 1,
+          url: 'https://files.rtuitlab.ru/subaru.mp3'
+        },
+        {
           offset: 300,
           url: 'https://files.rtuitlab.ru/subaru.mp3'
         }
       ],
       [
         {
-          offset: 50,
+          offset: 2,
           url: 'https://files.rtuitlab.ru/subaru.mp3'
         }
       ]
@@ -120,6 +131,7 @@ export default class Home extends Vue {
     display: flex;
     flex-direction: column;
     flex: 1;
+    box-shadow: 2px 0px 2px 0px rgba(0, 0, 0, 0.66);
 
     .sidebar-item {
       &:last-child {

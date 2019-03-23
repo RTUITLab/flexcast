@@ -1,6 +1,6 @@
 <template>
   <div class="c-timeline">
-    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample"/>
+    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample" :pps="pps"/>
   </div>
 </template>
 
@@ -22,8 +22,20 @@ export default class CTimeLine extends Vue {
     default: []
   })
   public samples!: Sample[];
+
+  @Prop({
+    default: 50
+  })
+  public pps!: number;
 }
 </script>
 
 <style lang="scss">
+.c-timeline {
+  right: 0;
+  position: relative;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+}
 </style>

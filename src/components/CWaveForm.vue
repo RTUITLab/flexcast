@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { Sample } from '@/model/Sample';
 
 import WaveSurfer from 'wavesurfer.js';
@@ -14,48 +14,64 @@ let SAMPLE_ID = 0;
 
 @Component({})
 export default class CWaveForm extends Vue {
-  private sampleId: Number = 0;
-  private wavesurfer!: any;
-
   @Prop()
   public sample!: Sample;
 
-  async mounted() {
+  @Prop({
+    default: 50
+  })
+  public pps!: number;
+
+  @Prop({
+    default: 0.2
+  })
+  public volume!: Number;
+
+  private sampleId: Number = 0;
+  private wavesurfer: any = null;
+
+  created() {
     this.sampleId = SAMPLE_ID++;
+  }
 
-    await this.$nextTick();
+  mounted() {
+    this.$nextTick(() => {
+      this.wavesurfer = WaveSurfer.create({
+        container: `#waveform-${this.sampleId}`,
+        waveColor: '#70FAFC',
+        progressColor: '#357d7f',
+        cursorColor: '#AAF9FE',
+        forceDecode: true,
+        autoCenter: false,
+        fillParent: false,
+        hideScrollbar: true,
+        cursorWidth: 0
+      });
 
-    this.wavesurfer = WaveSurfer.create({
-      container: `#waveform-${this.sampleId}`,
-      waveColor: '#70FAFC',
-      progressColor: '#357d7f',
-      cursorColor: '#AAF9FE',
-      forceDecode: true,
-      scrollParent: true,
-      autoCenter: false,
-      fillParent: false,
-      hideScrollbar: true
+      this.wavesurfer.toggleInteraction();
+      this.wavesurfer.toggleScroll();
+
+      this.wavesurfer.zoom(this.pps);
+
+      this.wavesurfer.on('error', (err: any) => {
+        console.log(err);
+      });
+
+      this.wavesurfer.load(this.sample.url);
     });
+  }
 
-    this.wavesurfer.toggleInteraction();
-    this.wavesurfer.toggleScroll();
-
-    this.wavesurfer.setVolume(0.2);
-
-    this.wavesurfer.on('error', (err: any) => {
-      console.log(err);
-    });
-
-    this.wavesurfer.load(this.sample.url);
-
-    this.wavesurfer.on('ready', () => {
-      //this.wavesurfer.play();
-    });
+  @Watch('pps', {
+    immediate: false
+  })
+  onPpsChanged(value: number, old: number) {
+    this.pps = value;
+    this.wavesurfer.zoom(this.pps);
   }
 
   get style() {
     return {
-      left: `${this.sample.offset}px`
+      left: `${this.sample.offset * this.pps}px`
     };
   }
 }
@@ -63,6 +79,8 @@ export default class CWaveForm extends Vue {
 
 <style lang="scss">
 .c-waveform {
+  display: inline-block;
   position: relative;
+  top: 0;
 }
 </style>

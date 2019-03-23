@@ -16,7 +16,6 @@
     "wavesurfer.js": "^2.2.1"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.5.0",
     "@vue/cli-plugin-typescript": "^3.5.0",
     "@vue/cli-service": "^3.5.0",
     "node-sass": "^4.9.0",
