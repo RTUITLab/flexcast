@@ -1,6 +1,6 @@
 <template>
   <div class="c-timeline" ref="timeline">
-    <canvas class="grid" ref="grid"></canvas>
+    <canvas class="grid-canvas" ref="grid-canvas"></canvas>
 
     <c-timeline-row
       v-for="(samples, index) in timelines"
@@ -10,7 +10,7 @@
       @needsRedraw="redraw"
     />
 
-    <div class="cursor" ref="cursor"></div>
+    <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
   </div>
 </template>
 
@@ -31,7 +31,8 @@ export default class CTimeLine extends Vue {
   private timelineElement!: HTMLElement;
   private cursorElement!: HTMLElement;
   private gridElement!: HTMLElement;
-  private context!: CanvasRenderingContext2D;
+  private gridContext!: CanvasRenderingContext2D;
+  private cursorContext!: CanvasRenderingContext2D;
 
   @Prop({
     type: Array,
@@ -41,10 +42,11 @@ export default class CTimeLine extends Vue {
 
   mounted() {
     this.timelineElement = this.$refs['timeline'] as HTMLElement;
-    this.cursorElement = this.$refs['cursor'] as HTMLElement;
-    this.gridElement = this.$refs['grid'] as HTMLElement;
+    this.cursorElement = this.$refs['cursor-canvas'] as HTMLElement;
+    this.gridElement = this.$refs['grid-canvas'] as HTMLElement;
 
-    this.context = (this.gridElement as any).getContext('2d');
+    this.gridContext = (this.gridElement as any).getContext('2d');
+    this.cursorContext = (this.cursorElement as any).getContext('2d');
 
     this.timelineElement.addEventListener(
       'mousewheel',
@@ -57,13 +59,15 @@ export default class CTimeLine extends Vue {
       false
     );
 
-    this.timelineElement.addEventListener('mousemove', this.updateCursor);
+    //this.timelineElement.addEventListener('mousemove', this.updateCursor);
+
+    state.on('playing', this.updateCursor);
 
     state.on('ppsChanged', this.redraw);
   }
 
-  updateCursor(e: any) {
-    this.cursorElement.style.left = `${e.clientX}px`;
+  updateCursor() {
+    this.redrawCursor();
   }
 
   updated() {
@@ -73,6 +77,11 @@ export default class CTimeLine extends Vue {
   }
 
   redraw() {
+    this.redrawGrid();
+    this.redrawCursor();
+  }
+
+  redrawGrid() {
     const xOffset = this.timelineElement.scrollLeft;
     const yOffset = this.timelineElement.scrollTop;
 
@@ -96,11 +105,11 @@ export default class CTimeLine extends Vue {
     (this.gridElement as any).width = width;
     (this.gridElement as any).height = height;
 
-    this.context.lineWidth = 2;
+    this.gridContext.lineWidth = 2;
 
-    this.context.clearRect(0, 0, width, height);
+    this.gridContext.clearRect(0, 0, width, height);
 
-    this.context.beginPath();
+    this.gridContext.beginPath();
 
     let step = 1;
     if (state.pps < 20) {
@@ -116,18 +125,18 @@ export default class CTimeLine extends Vue {
     let x = elapsedSteps * pixelStep - xOffset;
     const maxX = this.timelineElement.clientWidth;
 
-    this.context.font = '16px Arial';
-    this.context.fillStyle = '#11706D';
-    this.context.strokeStyle = '#03282D';
+    this.gridContext.font = '16px Arial';
+    this.gridContext.fillStyle = '#11706D';
+    this.gridContext.strokeStyle = '#03282D';
 
     while (x < maxX) {
-      this.context.moveTo(x, 0);
-      this.context.lineTo(x, height);
+      this.gridContext.moveTo(x, 0);
+      this.gridContext.lineTo(x, height);
 
       const minutes = Math.floor((elapsedSteps * step) / 60);
       const seconds = elapsedSteps * step - minutes * 60;
 
-      this.context.fillText(
+      this.gridContext.fillText(
         `${this.pad(minutes, 2)}:${this.pad(seconds, 2)}`,
         x + 3,
         height - 3
@@ -138,7 +147,34 @@ export default class CTimeLine extends Vue {
       x += pixelStep;
     }
 
-    this.context.stroke();
+    this.gridContext.stroke();
+  }
+
+  redrawCursor() {
+    const xOffset = this.timelineElement.scrollLeft;
+    const yOffset = this.timelineElement.scrollTop;
+
+    const width = this.timelineElement.clientWidth;
+    const height = this.timelineElement.clientHeight;
+
+    (this.cursorElement as any).width = width;
+    (this.cursorElement as any).height = height;
+
+    this.cursorContext.lineWidth = 2;
+
+    this.cursorContext.clearRect(0, 0, width, height);
+
+    this.cursorContext.beginPath();
+
+    const timePixels = (state.time * state.pps) / 1000;
+
+    if (timePixels >= xOffset && timePixels <= xOffset + width) {
+      this.cursorContext.strokeStyle = '#dd282D';
+      this.cursorContext.moveTo(timePixels - xOffset, 0);
+      this.cursorContext.lineTo(timePixels - xOffset, height);
+    }
+
+    this.cursorContext.stroke();
   }
 
   scrollHorizontally(e: any) {
@@ -212,18 +248,10 @@ export default class CTimeLine extends Vue {
   height: 100%;
   @include scrollbar();
 
-  .grid {
-    position: absolute;
-  }
-
-  .cursor {
+  .grid-canvas,
+  .cursor-canvas {
     position: absolute;
     top: 0;
-    height: calc(100% - 20px);
-    background-color: red;
-    display: block;
-    width: 1px;
-    z-index: 1;
   }
 }
 </style>

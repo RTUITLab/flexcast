@@ -8,7 +8,8 @@ type StateEvent =
   | 'volumeChanged'
   | 'windowSliceChanged'
   | 'playPause'
-  | 'playing';
+  | 'playing'
+  | 'seeked';
 
 type StateEventHandler = () => void;
 
@@ -22,8 +23,11 @@ export class State {
 
   public _isPlaying: boolean = false;
 
-  public _pps: number = 50;
-  public _volume: number = 1;
+  private _pps: number = 50;
+  private _volume: number = 1;
+
+  private _time: number = 0;
+  private _lastTimestamp: number = -1;
 
   private _listeners: Map<StateEvent, StateEventHandler[]> = new Map();
 
@@ -73,6 +77,26 @@ export class State {
   public set isPlaying(playing: boolean) {
     this._isPlaying = playing;
     this.fire('playPause');
+
+    this._lastTimestamp = -1;
+    const callback = (timestamp: number) => {
+      if (this._lastTimestamp < 0) {
+        this._lastTimestamp = timestamp;
+      }
+      this._time += timestamp - this._lastTimestamp;
+
+      this.fire('playing');
+
+      this._lastTimestamp = timestamp;
+
+      if (state.isPlaying) {
+        window.requestAnimationFrame(callback);
+      }
+    };
+
+    if (this.isPlaying) {
+      window.requestAnimationFrame(callback);
+    }
   }
 
   public get isPlaying() {
@@ -95,6 +119,15 @@ export class State {
 
   public get volume() {
     return this._volume;
+  }
+
+  public set time(time: number) {
+    this._time = time;
+    this.fire('seeked');
+  }
+
+  public get time() {
+    return this._time;
   }
 
   public set samples(samples: Sample[]) {

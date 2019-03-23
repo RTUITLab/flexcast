@@ -23,6 +23,9 @@ export default class CWaveForm extends Vue {
 
   private sampleId: Number = 0;
   private wavesurfer: any = null;
+  private isPlaying: boolean = false;
+
+  private shouldPlay: boolean = false;
 
   created() {
     this.sampleId = SAMPLE_ID++;
@@ -63,12 +66,34 @@ export default class CWaveForm extends Vue {
         state.updateSample(this.sample);
       });
 
-      state.on('playPause', () => {
-        if (this.sample.isComplete) {
-          this.wavesurfer.playPause();
-        }
-      });
+      state.on('playing', this.updatePlaying);
+      state.on('playPause', this.updatePlaying);
     });
+  }
+
+  updatePlaying() {
+    this.shouldPlay = state.isPlaying;
+
+    const inRange = this.isInRange();
+
+    if (this.isPlaying && (!this.shouldPlay || !inRange)) {
+      this.wavesurfer.pause();
+      this.isPlaying = false;
+    } else if (!this.isPlaying && this.shouldPlay && this.isInRange()) {
+      this.wavesurfer.play();
+      this.isPlaying = true;
+    }
+  }
+
+  isInRange() {
+    if (!this.sample.isComplete) {
+      return false;
+    }
+    const seconds = state.time / 1000;
+    return (
+      seconds >= this.sample.offset &&
+      seconds <= this.sample.offset + this.sample.duration
+    );
   }
 
   updateZoom() {
