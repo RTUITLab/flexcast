@@ -27,9 +27,8 @@ import { Component, Watch, Prop, Vue } from 'vue-property-decorator';
 import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
 import { IWindowSlice } from '@/model/WindowSlice';
-import { Sample } from '@/model/Sample';
-import state, { ISourceHandle } from '@/model/State';
-import { moveCursor } from 'readline';
+import { Sample, ISource, ISourceHandle } from '@/model/Sample';
+import state from '@/model/State';
 
 @Component({
   components: {
@@ -90,16 +89,21 @@ export default class CTimeLine extends Vue {
     this.sourceHandle = state.sourceHandle;
 
     if (this.sourceHandle == null) {
+      if (this.newSample) {
+        state.addSample(this.newSample);
+      }
+
       this.newSample = null;
       return;
     }
 
     const xOffset = this.timelineElement.scrollLeft;
     const x = this.sourceHandle.pageX - this.timelineElement.offsetLeft;
-    const offset = (xOffset + x) / state.pps;
+    const offset = Math.max(0, (xOffset + x) / state.pps);
 
     if (this.newSample == null) {
-      this.newSample = new Sample(this.sourceHandle.data, offset);
+      const source = this.sourceHandle.source;
+      this.newSample = new Sample(source, offset);
     } else {
       this.newSample.offset = offset;
     }

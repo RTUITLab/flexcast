@@ -1,21 +1,38 @@
+import { Beats } from './Analyzer';
+
 let CURRENT_ID: number = 0;
+
+export type SourceState = 'analyzing' | 'complete';
+
+export interface ISource {
+  url: string;
+  data: AudioBuffer;
+  state: SourceState;
+  beats?: Beats;
+}
+
+export interface ISourceHandle {
+  source: ISource;
+  pageX: number;
+  pageY: number;
+}
 
 export interface ISample {
   id: number;
-  url: string;
+  source: ISource;
   offset: number;
   duration: number;
 }
 
 export class Sample implements ISample {
   public id: number;
-  public url: string;
+  public source: ISource;
   public offset: number;
   public duration: number = 0;
 
-  constructor(url: string, offset: number) {
+  constructor(source: ISource, offset: number) {
     this.id = CURRENT_ID++;
-    this.url = url;
+    this.source = source;
     this.offset = offset;
   }
 

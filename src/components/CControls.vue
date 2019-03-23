@@ -20,7 +20,7 @@
       </span>
     </div>
     <div class="slidecontainer">
-      <input type="range" v-model="zoom" min="5" max="200" class="slider" @input="zoomChanged">
+      <input type="range" v-model="zoom" min="1" max="200" class="slider" @input="zoomChanged">
     </div>
   </div>
 </template>
@@ -43,7 +43,7 @@ export default class CControls extends Vue {
 
   private isPlaying: boolean = false;
 
-  private zoom: number = 50;
+  private zoom: number = 20;
   private volume: number = 100;
 
   mounted() {

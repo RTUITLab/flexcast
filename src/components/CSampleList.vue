@@ -1,29 +1,29 @@
 <template>
   <div class="c-samplelist">
     <div
-      v-for="(url, index) in sources"
+      v-for="(source, index) in sources"
       :key="`source-${index}`"
       class="item noselect"
-      @mousedown="startHandle($event, url)"
-    >{{ url }}</div>
+      :class="getSourceClass(source)"
+      @mousedown="startHandle($event, source)"
+    >{{ source.url }}</div>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 
+import { ISource, ISourceHandle } from '@/model/Sample';
 import state from '@/model/State';
 
 @Component
 export default class CSampleList extends Vue {
-  private sources: string[] = [];
+  private handle: ISourceHandle | null = null;
+  private sources: ISource[] = [];
 
   created() {
     state.on('sourcesChanged', this.updateSources);
-
-    state.on('handleMoved', () => {
-      console.log(state.sourceHandle);
-    });
+    state.on('handleStartedFinished', this.updateHandle);
 
     window.addEventListener('mouseup', () => {
       state.setHandle(null);
@@ -34,19 +34,23 @@ export default class CSampleList extends Vue {
         return;
       }
 
-      const { data } = state.sourceHandle;
+      const { source } = state.sourceHandle;
 
       state.updateHandle({
-        data,
+        source,
         pageX: e.pageX,
         pageY: e.pageY
       });
     });
   }
 
-  startHandle(e: any, url: string) {
+  startHandle(e: any, source: ISource) {
+    if (source.state != 'complete') {
+      return;
+    }
+
     state.setHandle({
-      data: url,
+      source,
       pageX: e.pageX,
       pageY: e.pageY
     });
@@ -54,6 +58,18 @@ export default class CSampleList extends Vue {
 
   updateSources() {
     this.sources = state.sources;
+  }
+
+  updateHandle() {
+    this.handle = state.sourceHandle;
+  }
+
+  getSourceClass(sample: ISource) {
+    return {
+      handled: this.handle != null && sample.url == this.handle.source.url,
+      analyzing: sample.state == 'analyzing',
+      complete: sample.state == 'complete'
+    };
   }
 }
 </script>
@@ -65,6 +81,7 @@ export default class CSampleList extends Vue {
   justify-content: flex-start;
   background-color: #003840;
   height: 100%;
+  opacity: 1;
 
   .item {
     margin: 4px;
@@ -73,7 +90,12 @@ export default class CSampleList extends Vue {
     cursor: pointer;
 
     &.handled {
-      background-color: #021518;
+      opacity: 0.5;
+    }
+
+    &.analyzing {
+      opacity: 0.1;
+      cursor: default;
     }
   }
 }

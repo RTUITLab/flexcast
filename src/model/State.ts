@@ -1,5 +1,7 @@
-import { Sample } from '@/model/Sample';
+import { Sample, ISource, ISourceHandle } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
+import axios from 'axios';
+import { Analyzer, Beats } from './Analyzer';
 
 type StateEvent =
   | 'sourcesChanged'
@@ -16,23 +18,19 @@ type StateEvent =
 
 type StateEventHandler = () => void;
 
-export interface ISourceHandle {
-  data: string;
-  pageX: number;
-  pageY: number;
-}
-
 export class State {
-  public _sources: string[] = [];
+  private _context = new AudioContext();
 
-  public _windowSlice: IWindowSlice = {
+  private _sources: ISource[] = [];
+
+  private _windowSlice: IWindowSlice = {
     offsetLeft: 0,
     offsetTop: 0,
     width: 0,
     height: 0
   };
 
-  public _isPlaying: boolean = false;
+  private _isPlaying: boolean = false;
 
   private _pps: number = 50;
   private _volume: number = 1;
@@ -74,7 +72,37 @@ export class State {
   }
 
   public addSource(url: string) {
-    this._sources.push(url);
+    const res = new Promise((resolve, reject) => {
+      axios
+        .get(url, { responseType: 'arraybuffer' })
+        .then((buffer) => {
+          return this._context.decodeAudioData(buffer.data);
+        })
+        .then((decoded) => {
+          this._sources.push({
+            url,
+            data: decoded,
+            state: 'analyzing'
+          });
+
+          this.fire('sourcesChanged');
+
+          return new Analyzer(this._context, decoded).Analyze(10);
+        })
+        .then((beats) => {
+          this.updateBeats(url, beats);
+        });
+    });
+  }
+
+  public updateBeats(sourceUrl: string, beats: Beats) {
+    const index = this._sources.findIndex((s) => s.url === sourceUrl);
+    if (index < 0) {
+      return;
+    }
+
+    this._sources[index].beats = beats;
+    this._sources[index].state = 'complete';
     this.fire('sourcesChanged');
   }
 
@@ -145,6 +173,12 @@ export class State {
 
   public get time() {
     return this._time;
+  }
+
+  public addSample(sample: Sample) {
+    this._samples.push(sample);
+    this.fire('samplesChanged');
+    this.checkComplete();
   }
 
   public set samples(samples: Sample[]) {
