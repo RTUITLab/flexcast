@@ -82,10 +82,7 @@ export default class CTimeLineRow extends Vue {
   margin: 0;
   padding: 0;
   height: 128px;
-
-  &:not(:last-child) {
-    margin-bottom: 5px;
-  }
+  margin-bottom: 5px;
 
   .item {
     height: 128px;

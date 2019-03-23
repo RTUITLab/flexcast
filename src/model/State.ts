@@ -2,6 +2,7 @@ import { Sample } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
 
 type StateEvent =
+  | 'sourcesChanged'
   | 'ready'
   | 'samplesChanged'
   | 'ppsChanged'
@@ -9,11 +10,21 @@ type StateEvent =
   | 'windowSliceChanged'
   | 'playPause'
   | 'playing'
-  | 'seeked';
+  | 'seeked'
+  | 'handleStartedFinished'
+  | 'handleMoved';
 
 type StateEventHandler = () => void;
 
+export interface ISourceHandle {
+  data: string;
+  pageX: number;
+  pageY: number;
+}
+
 export class State {
+  public _sources: string[] = [];
+
   public _windowSlice: IWindowSlice = {
     offsetLeft: 0,
     offsetTop: 0,
@@ -32,6 +43,8 @@ export class State {
   private _listeners: Map<StateEvent, StateEventHandler[]> = new Map();
 
   private _samples: Sample[] = [];
+
+  private _sourceHandle: ISourceHandle | null = null;
 
   public updateSample(sample: Sample) {
     const index = this.samples.findIndex((value) => value.id === sample.id);
@@ -63,6 +76,15 @@ export class State {
     }
 
     this._listeners.set(event, listeners.splice(handlerIndex, 1));
+  }
+
+  public addSource(url: string) {
+    this._sources.push(url);
+    this.fire('sourcesChanged');
+  }
+
+  public get sources() {
+    return this._sources;
   }
 
   public set windowSlice(windowSlice: IWindowSlice) {
@@ -138,6 +160,20 @@ export class State {
 
   public get samples() {
     return this._samples;
+  }
+
+  public setHandle(handle: ISourceHandle | null) {
+    this._sourceHandle = handle;
+    this.fire('handleStartedFinished');
+  }
+
+  public updateHandle(handle: ISourceHandle) {
+    this._sourceHandle = handle;
+    this.fire('handleMoved');
+  }
+
+  public get sourceHandle() {
+    return this._sourceHandle;
   }
 
   private checkComplete() {

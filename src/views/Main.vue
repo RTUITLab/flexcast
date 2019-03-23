@@ -33,20 +33,21 @@ export default class Home extends Vue {
   private samples: Sample[] = [];
 
   created() {
-    
+    state.on('samplesChanged', this.updateSamples);
+    this.updateSamples();
+  }
+
+  mounted() {
+    state.addSource('https://files.rtuitlab.ru/green-light.mp3');
+    state.addSource('https://files.rtuitlab.ru/subaru.mp3');
+
     state.samples = [
       new Sample('https://files.rtuitlab.ru/green-light.mp3', 0),
       new Sample('https://files.rtuitlab.ru/subaru.mp3', 4)
     ];
+
     const composer = new Composer();
     composer.Run(state.samples);
-
-    state.on('samplesChanged', this.updateSamples);
-    this.updateSamples();
-
-    state.on('ready', () => {
-      console.log('Hello world');
-    });
   }
 
   updateSamples() {

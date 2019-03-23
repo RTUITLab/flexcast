@@ -39,12 +39,26 @@ import state from '@/model/State';
   }
 })
 export default class CControls extends Vue {
+  private isReady: boolean = false;
+
   private isPlaying: boolean = false;
 
   private zoom: number = 50;
   private volume: number = 100;
 
+  mounted() {
+    state.on('ready', this.handleReady);
+  }
+
+  handleReady() {
+    this.isReady = true;
+  }
+
   togglePlay() {
+    if (!this.isReady) {
+      return;
+    }
+
     this.isPlaying = !this.isPlaying;
     state.isPlaying = this.isPlaying;
   }
