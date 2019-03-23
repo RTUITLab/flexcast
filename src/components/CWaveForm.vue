@@ -1,6 +1,6 @@
 <template>
   <div class="c-waveform" :style="style">
-    <div class="waveform"></div>
+    <div :id="`waveform-${sampleId}`"></div>
   </div>
 </template>
 
@@ -10,21 +10,33 @@ import { Sample } from '@/model/Sample';
 
 import WaveSurfer from 'wavesurfer.js';
 
+let SAMPLE_ID = 0;
+
 @Component({})
 export default class CWaveForm extends Vue {
+  private sampleId: Number = 0;
   private wavesurfer!: any;
 
   @Prop()
   public sample!: Sample;
 
-  mounted() {
+  async mounted() {
+    this.sampleId = SAMPLE_ID++;
+
+    await this.$nextTick();
+
     this.wavesurfer = WaveSurfer.create({
-      container: '.waveform',
+      container: `#waveform-${this.sampleId}`,
       waveColor: '#70FAFC',
       progressColor: '#357d7f',
       cursorColor: '#AAF9FE',
-      forceDecode: true
+      forceDecode: true,
+      scrollParent: true,
+      autoCenter: false,
+      fillParent: false,
+      hideScrollbar: true
     });
+
     this.wavesurfer.toggleInteraction();
     this.wavesurfer.toggleScroll();
 
