@@ -93,6 +93,7 @@ export default class CTimeLineRow extends Vue {
     position: absolute;
     top: 0;
     background: rgba(0, 0, 0, 0.2);
+    z-index: 4;
   }
 }
 </style>

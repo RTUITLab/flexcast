@@ -59,11 +59,12 @@ export default class CTimeLine extends Vue {
       false
     );
 
-    //this.timelineElement.addEventListener('mousemove', this.updateCursor);
-
     state.on('playing', this.updateCursor);
 
     state.on('ppsChanged', this.redraw);
+
+    state.on('ready', this.redraw);
+    this.redraw();
   }
 
   updateCursor() {
