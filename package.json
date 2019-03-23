@@ -13,7 +13,8 @@
     "vue-class-component": "^6.0.0",
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
-    "wavesurfer.js": "^2.2.1"
+    "wavesurfer.js": "^2.2.1",
+    "axios": "^0.18.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-typescript": "^3.5.0",

@@ -12,7 +12,7 @@ export default class CSampleList extends Vue {
   mounted() {}
 
   get tracks() {
-    return ['test/test.mp3', 'test/test.mp3'];
+    return ['https://files.rtuitlab.ru/subaru.mp3', 'test/test.mp3'];
   }
 }
 </script>

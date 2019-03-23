@@ -19,7 +19,6 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-
 import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
