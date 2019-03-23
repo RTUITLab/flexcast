@@ -1,5 +1,5 @@
 <template>
-  <div class="c-timeline" ref="timeline">
+  <div class="c-timeline" ref="timeline" @scroll="redraw">
     <canvas class="grid-canvas" ref="grid-canvas"></canvas>
 
     <c-timeline-row
@@ -9,6 +9,14 @@
       :ref="`timeline-${index}`"
       @needsRedraw="redraw"
     />
+
+    <template v-if="sourceHandle">
+      <c-timeline-row
+        :samples="newSample ? [newSample] : []"
+        :ref="`timeline-new`"
+        @needsRedraw="redraw"
+      />
+    </template>
 
     <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
   </div>
@@ -20,7 +28,7 @@ import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
 import { IWindowSlice } from '@/model/WindowSlice';
 import { Sample } from '@/model/Sample';
-import state from '@/model/State';
+import state, { ISourceHandle } from '@/model/State';
 import { moveCursor } from 'readline';
 
 @Component({
@@ -34,6 +42,9 @@ export default class CTimeLine extends Vue {
   private gridElement!: HTMLElement;
   private gridContext!: CanvasRenderingContext2D;
   private cursorContext!: CanvasRenderingContext2D;
+
+  private sourceHandle: ISourceHandle | null = null;
+  private newSample: Sample | null = null;
 
   @Prop({
     type: Array,
@@ -62,6 +73,9 @@ export default class CTimeLine extends Vue {
 
     this.timelineElement.addEventListener('click', this.moveCursor);
 
+    state.on('handleStartedFinished', this.updateSourceHandle);
+    state.on('handleMoved', this.updateSourceHandle);
+
     state.on('playing', this.updateCursor);
 
     state.on('ppsChanged', this.redraw);
@@ -70,6 +84,25 @@ export default class CTimeLine extends Vue {
     this.redraw();
 
     window.addEventListener('resize', this.redraw);
+  }
+
+  updateSourceHandle() {
+    this.sourceHandle = state.sourceHandle;
+
+    if (this.sourceHandle == null) {
+      this.newSample = null;
+      return;
+    }
+
+    const xOffset = this.timelineElement.scrollLeft;
+    const x = this.sourceHandle.pageX - this.timelineElement.offsetLeft;
+    const offset = (xOffset + x) / state.pps;
+
+    if (this.newSample == null) {
+      this.newSample = new Sample(this.sourceHandle.data, offset);
+    } else {
+      this.newSample.offset = offset;
+    }
   }
 
   updateCursor() {
@@ -114,6 +147,16 @@ export default class CTimeLine extends Vue {
       }
 
       timeline.updateVisibleItems({
+        offsetLeft: xOffset,
+        offsetTop: yOffset,
+        width,
+        height
+      });
+    }
+
+    const timelineNew = this.$refs['timeline-new'] as any;
+    if (timelineNew) {
+      timelineNew.updateVisibleItems({
         offsetLeft: xOffset,
         offsetTop: yOffset,
         width,
