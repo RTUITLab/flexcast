@@ -5,10 +5,10 @@
     </div>
     <div class="button play noselect" @click="togglePlay">
       <span v-if="isPlaying">
-        <icon name="play"/>
+        <img src="icons/play.svg">
       </span>
       <span v-else>
-        <icon name="pause"/>
+        <img src="icons/pause.svg">
       </span>
     </div>
     <div class="slidecontainer">
@@ -97,12 +97,10 @@ export default class CControls extends Vue {
 
   .button {
     color: #232532;
-    background-color: #82828e;
     text-align: center;
 
     &:hover,
     &.active {
-      background-color: #0fc1c7;
       cursor: pointer;
     }
 

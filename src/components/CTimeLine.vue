@@ -7,6 +7,7 @@
       :key="`timeline-${index}`"
       :samples="samples"
       :pps="pps"
+      :ref="`timeline-${index}`"
       @needsRedraw="redraw"
     />
   </div>
@@ -16,6 +17,7 @@
 import { Component, Watch, Prop, Vue } from 'vue-property-decorator';
 import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
+import { IWindowSlice } from '@/model/WindowSlice';
 import { Sample } from '@/model/Sample';
 
 @Component({
@@ -61,20 +63,31 @@ export default class CTimeLine extends Vue {
   }
 
   redraw() {
-    (this.gridElement as any).width = this.timelineElement.clientWidth;
-    (this.gridElement as any).height = this.timelineElement.clientHeight;
+    const xOffset = this.timelineElement.scrollLeft;
+    const yOffset = this.timelineElement.scrollTop;
 
     const width = this.timelineElement.clientWidth;
     const height = this.timelineElement.clientHeight;
+
+    for (let i = 0; i < this.timelines.length; ++i) {
+      const timeline = (this.$refs[`timeline-${i}`] as any)[0];
+
+      timeline.updateVisibleItems({
+        offsetLeft: xOffset,
+        offsetTop: yOffset,
+        width,
+        height
+      });
+    }
+
+    (this.gridElement as any).width = width;
+    (this.gridElement as any).height = height;
 
     this.context.lineWidth = 2;
 
     this.context.clearRect(0, 0, width, height);
 
     this.context.beginPath();
-
-    const xOffset = this.timelineElement.scrollLeft;
-    const yOffset = this.timelineElement.scrollTop;
 
     let elapsedSeconds = Math.ceil(xOffset / this.pps);
 

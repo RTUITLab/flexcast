@@ -1,0 +1,19 @@
+
+<svg width="52px" height="52px" viewBox="0 0 52 52" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <linearGradient x1="50%" y1="23.6375096%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#023F40" offset="0%"></stop>
+            <stop stop-color="#4CB0B3" offset="87.0328538%"></stop>
+            <stop stop-color="#7EFCFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="listen" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Desktop-HD" transform="translate(-535.000000, -486.000000)" stroke="#006A7E">
+            <circle id="Oval" fill="#03282D" cx="561" cy="512" r="25"></circle>
+            <g id="pause" transform="translate(553.000000, 500.000000)" fill="url(#linearGradient-1)">
+                <rect id="Rectangle" x="0.5" y="0.5" width="5" height="23"></rect>
+                <rect id="Rectangle" x="10.5" y="0.5" width="5" height="23"></rect>
+            </g>
+        </g>
+    </g>
+</svg>
