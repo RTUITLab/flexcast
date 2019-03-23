@@ -21,6 +21,7 @@ import CTimeLineRow from '@/components/CTimeLineRow.vue';
 import { IWindowSlice } from '@/model/WindowSlice';
 import { Sample } from '@/model/Sample';
 import state from '@/model/State';
+import { moveCursor } from 'readline';
 
 @Component({
   components: {
@@ -59,6 +60,8 @@ export default class CTimeLine extends Vue {
       false
     );
 
+    this.timelineElement.addEventListener('click', this.moveCursor);
+
     state.on('playing', this.updateCursor);
 
     state.on('ppsChanged', this.redraw);
@@ -79,6 +82,13 @@ export default class CTimeLine extends Vue {
 
   redraw() {
     this.redrawGrid();
+    this.redrawCursor();
+  }
+
+  moveCursor(e: any) {
+    const pixels = this.timelineElement.scrollLeft + e.layerX;
+    state.time = (pixels / state.pps) * 1000;
+
     this.redrawCursor();
   }
 

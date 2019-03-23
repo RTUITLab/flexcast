@@ -68,7 +68,27 @@ export default class CWaveForm extends Vue {
 
       state.on('playing', this.updatePlaying);
       state.on('playPause', this.updatePlaying);
+      state.on('seeked', this.handleSeek);
     });
+  }
+
+  handleSeek() {
+    if (!this.sample.isComplete) {
+      return;
+    }
+
+    const seconds = state.time / 1000;
+
+    let progress = 0;
+    if (seconds > this.sample.offset + this.sample.duration) {
+      progress = 1;
+    } else if (seconds > this.sample.offset) {
+      progress = (seconds - this.sample.offset) / this.sample.duration;
+    }
+
+    this.wavesurfer.seekTo(progress);
+
+    this.updatePlaying();
   }
 
   updatePlaying() {
@@ -112,6 +132,7 @@ export default class CWaveForm extends Vue {
     if (this.wavesurfer == null) {
       return;
     }
+
     this.volume = state.volume;
     this.wavesurfer.setVolume(state.volume);
   }
