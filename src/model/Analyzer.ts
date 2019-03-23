@@ -18,6 +18,7 @@ export class Analyzer {
         const tailAnalyzer = this.context.createAnalyser();
         headPart.connect(headAnalyzer);
         tailPart.connect(tailAnalyzer);
+        tailAnalyzer.connect(this.context.destination);
         const headPromise = this.AnalyzeInternal(
             headPart,
             headAnalyzer,
@@ -25,8 +26,9 @@ export class Analyzer {
         const tailPromise = this.AnalyzeInternal(
             tailPart,
             tailAnalyzer,
-            this.data.duration - 10
+            this.data.duration - seconds
         );
+        console.log(this.data.duration);
         return Promise.all([headPromise, tailPromise]).then(args => new Beats(args[0], args[1]));
     }
 
@@ -36,9 +38,10 @@ export class Analyzer {
         offset: number
     ): Promise<number[]> {
         return new Promise((res, rej) => {
-            const now = Date.now() + offset;
-            const alg = new Algorithm(result => res(result.map(b => b - now)), rej, analyser, Date.now() + 10000);
-            requestAnimationFrame(() =>alg.update());
+            const dateNow = Date.now();
+            const now = dateNow;
+            const alg = new Algorithm(result => res(result.map(b => (b - now)+(offset * 1000))), rej, analyser, Date.now() + 10000);
+            requestAnimationFrame(() => alg.update());
             source.start(0, offset);
         });
     }
@@ -51,7 +54,7 @@ class Algorithm {
         private reject: (reason: any) => void,
         private analyser: AnalyserNode,
         private end: number) {
-        this.previousFFT = new Float32Array(analyser.frequencyBinCount);        
+        this.previousFFT = new Float32Array(analyser.frequencyBinCount);
     }
 
     private beats: number[] = [];
@@ -86,11 +89,11 @@ class Algorithm {
 
         let median = 0;
         let smoothMedian = 0;
-        
+
         if (this.spectrumFluxes.length > 0 && this.spectrumFluxes.length < 10) {
             this.spectrumFluxes.sort();
             this.smootherValues.sort();
-           
+
             if (this.spectrumFluxes[this.spectrumFluxes.length / 2] > 0) {
                 median = this.spectrumFluxes[this.spectrumFluxes.length / 2];
             }
@@ -133,7 +136,7 @@ class Algorithm {
 
     public update(): void {
 
-        if (Date.now()  > this.end)
+        if (Date.now() > this.end)
             this.resolve(this.beats);
 
         const specStereo = this.getCurrentSpectrum();
