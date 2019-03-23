@@ -4,7 +4,7 @@
 
     <template v-for="item in visibleItems">
       <div
-        class="item"
+        class="item noselect"
         :style="generateStyle(item)"
         :key="`item-${item.sample.id}`"
       >{{item.sample.url}}</div>

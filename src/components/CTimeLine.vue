@@ -86,7 +86,9 @@ export default class CTimeLine extends Vue {
   }
 
   moveCursor(e: any) {
-    const pixels = this.timelineElement.scrollLeft + e.layerX;
+    const x = e.pageX - this.timelineElement.offsetLeft;
+
+    const pixels = this.timelineElement.scrollLeft + x;
     state.time = (pixels / state.pps) * 1000;
 
     this.redrawCursor();
