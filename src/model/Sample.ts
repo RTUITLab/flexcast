@@ -1,14 +1,25 @@
+let CURRENT_ID: number = 0;
+
 export interface ISample {
-    offset: number;
-    url: string;
+  id: number;
+  url: string;
+  offset: number;
+  duration: number;
 }
 
 export class Sample implements ISample {
-    public offset: number;
-    public url: string;
+  public id: number;
+  public url: string;
+  public offset: number;
+  public duration: number = 0;
 
-    constructor(data: ISample) {
-        this.offset = data.offset;
-        this.url = data.url;
-    }
+  constructor(url: string, offset: number) {
+    this.id = CURRENT_ID++;
+    this.url = url;
+    this.offset = offset;
+  }
+
+  get isComplete() {
+    return this.duration > 0;
+  }
 }

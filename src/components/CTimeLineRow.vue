@@ -1,19 +1,13 @@
 <template>
   <div class="c-timeline-row">
-    <c-waveform
-      v-for="(sample, index) in samples"
-      :key="`waveform-${index}`"
-      :sample="sample"
-      :pps="pps"
-      @waveformReady="onReady"
-    />
+    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample"/>
 
     <template v-for="item in visibleItems">
       <div
-        class="item"
+        class="item noselect"
         :style="generateStyle(item)"
         :key="`item-${item.sample.id}`"
-      >{{item.sample.sample.url}}</div>
+      >{{item.sample.url}}</div>
     </template>
   </div>
 </template>
@@ -24,15 +18,10 @@ import CWaveForm from '@/components/CWaveForm.vue';
 
 import { Sample, ISample } from '@/model/Sample';
 import { IWindowSlice, contains } from '@/model/WindowSlice';
-
-interface ISampleItem {
-  id: number;
-  sample: Sample;
-  duration: number;
-}
+import state from '@/model/State';
 
 interface IVisibleItem {
-  sample: ISampleItem;
+  sample: Sample;
   left: number;
   width: number;
 }
@@ -49,33 +38,24 @@ export default class CTimeLineRow extends Vue {
   })
   public samples!: Sample[];
 
-  @Prop()
-  public pps!: number;
-
-  private sampleItems: Map<number, ISampleItem> = new Map<
-    number,
-    ISampleItem
-  >();
-
   private visibleItems: IVisibleItem[] = [];
-
-  onReady(sampleItem: ISampleItem) {
-    this.sampleItems.set(sampleItem.id, sampleItem);
-    this.$emit('needsRedraw');
-  }
 
   public updateVisibleItems(windowSlice: IWindowSlice) {
     let result: IVisibleItem[] = [];
 
-    this.sampleItems.forEach((element) => {
-      const left = element.sample.offset * this.pps;
-      const width = element.duration * this.pps;
+    this.samples.forEach((sample) => {
+      if (!sample.isComplete) {
+        return;
+      }
+
+      const left = sample.offset * state.pps;
+      const width = sample.duration * state.pps;
 
       const area = contains(windowSlice, left, width);
 
       if (area) {
         result.push({
-          sample: element,
+          sample: sample,
           left: area.left,
           width: area.width
         });
@@ -113,6 +93,7 @@ export default class CTimeLineRow extends Vue {
     position: absolute;
     top: 0;
     background: rgba(0, 0, 0, 0.2);
+    z-index: 4;
   }
 }
 </style>
