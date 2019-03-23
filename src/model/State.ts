@@ -70,12 +70,7 @@ export class State {
       return;
     }
 
-    const handlerIndex = listeners.findIndex((v) => v === handler);
-    if (handlerIndex < 0) {
-      return;
-    }
-
-    this._listeners.set(event, listeners.splice(handlerIndex, 1));
+    this._listeners.set(event, listeners.filter((v) => v !== handler));
   }
 
   public addSource(url: string) {
