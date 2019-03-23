@@ -19,7 +19,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-
+import { Composer } from '@/model/Composer';
 import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
@@ -34,6 +34,8 @@ export default class CControls extends Vue {
   private zoom: number = 50;
 
   togglePlay() {
+    const composer = new Composer();
+    composer.Test();
     this.isPlaying = !this.isPlaying;
     this.$emit('playPause', this.isPlaying);
   }
