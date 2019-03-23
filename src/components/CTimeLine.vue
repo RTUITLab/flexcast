@@ -10,6 +10,8 @@
       :ref="`timeline-${index}`"
       @needsRedraw="redraw"
     />
+
+    <div class="cursor" ref="cursor"></div>
   </div>
 </template>
 
@@ -27,6 +29,7 @@ import { Sample } from '@/model/Sample';
 })
 export default class CTimeLine extends Vue {
   private timelineElement!: HTMLElement;
+  private cursorElement!: HTMLElement;
   private gridElement!: HTMLElement;
   private context!: CanvasRenderingContext2D;
 
@@ -41,7 +44,9 @@ export default class CTimeLine extends Vue {
 
   mounted() {
     this.timelineElement = this.$refs['timeline'] as HTMLElement;
+    this.cursorElement = this.$refs['cursor'] as HTMLElement;
     this.gridElement = this.$refs['grid'] as HTMLElement;
+
     this.context = (this.gridElement as any).getContext('2d');
 
     this.timelineElement.addEventListener(
@@ -54,6 +59,12 @@ export default class CTimeLine extends Vue {
       this.scrollHorizontally,
       false
     );
+
+    this.timelineElement.addEventListener('mousemove', this.updateCursor);
+  }
+
+  updateCursor(e: any) {
+    this.cursorElement.style.left = `${e.clientX}px`;
   }
 
   updated() {
@@ -191,6 +202,16 @@ export default class CTimeLine extends Vue {
 
   .grid {
     position: absolute;
+  }
+
+  .cursor {
+    position: absolute;
+    top: 0;
+    height: calc(100% - 20px);
+    background-color: red;
+    display: block;
+    width: 1px;
+    z-index: 999999;
   }
 }
 </style>
