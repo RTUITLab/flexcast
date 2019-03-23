@@ -41,7 +41,7 @@ export default class CControls extends Vue {
   }
 
   zoomChanged(value: Number) {
-    this.$emit('zoomChanged', this.zoom);
+    this.$emit('zoomChanged', Number(this.zoom));
   }
 }
 </script>
@@ -52,7 +52,7 @@ export default class CControls extends Vue {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  background-color: #2f3045;
+  background-color: #03282d;
   justify-items: center;
 
   .slidecontainer {
@@ -66,7 +66,8 @@ export default class CControls extends Vue {
       -webkit-appearance: none;
       appearance: none;
       height: 5px;
-      background: #d3d3d3;
+      background-color: #0b4e51;
+      border: 1px solid #24dbcc;
       outline: none;
       opacity: 0.7;
 
@@ -80,7 +81,8 @@ export default class CControls extends Vue {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: #4caf50;
+        background-image: radial-gradient(78% 150%, #9cefff 50%, #023637 100%);
+        border: 2px solid rgba(100, 180, 186, 0.85);
         cursor: pointer;
       }
 
@@ -88,7 +90,8 @@ export default class CControls extends Vue {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: #4caf50;
+        background-image: radial-gradient(78% 150%, #9cefff 50%, #023637 100%);
+        border: 2px solid rgba(100, 180, 186, 0.85);
         cursor: pointer;
       }
     }
