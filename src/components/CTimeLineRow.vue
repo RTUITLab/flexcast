@@ -1,18 +1,13 @@
 <template>
   <div class="c-timeline-row">
-    <c-waveform
-      v-for="(sample, index) in samples"
-      :key="`waveform-${index}`"
-      :sample="sample"
-      @waveformReady="onReady"
-    />
+    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample"/>
 
     <template v-for="item in visibleItems">
       <div
         class="item"
         :style="generateStyle(item)"
         :key="`item-${item.sample.id}`"
-      >{{item.sample.sample.url}}</div>
+      >{{item.sample.url}}</div>
     </template>
   </div>
 </template>
@@ -25,14 +20,8 @@ import { Sample, ISample } from '@/model/Sample';
 import { IWindowSlice, contains } from '@/model/WindowSlice';
 import state from '@/model/State';
 
-interface ISampleItem {
-  id: number;
-  sample: Sample;
-  duration: number;
-}
-
 interface IVisibleItem {
-  sample: ISampleItem;
+  sample: Sample;
   left: number;
   width: number;
 }
@@ -49,30 +38,24 @@ export default class CTimeLineRow extends Vue {
   })
   public samples!: Sample[];
 
-  private sampleItems: Map<number, ISampleItem> = new Map<
-    number,
-    ISampleItem
-  >();
-
   private visibleItems: IVisibleItem[] = [];
-
-  onReady(sampleItem: ISampleItem) {
-    this.sampleItems.set(sampleItem.id, sampleItem);
-    this.$emit('needsRedraw');
-  }
 
   public updateVisibleItems(windowSlice: IWindowSlice) {
     let result: IVisibleItem[] = [];
 
-    this.sampleItems.forEach((element) => {
-      const left = element.sample.offset * state.pps;
-      const width = element.duration * state.pps;
+    this.samples.forEach((sample) => {
+      if (!sample.isComplete) {
+        return;
+      }
+
+      const left = sample.offset * state.pps;
+      const width = sample.duration * state.pps;
 
       const area = contains(windowSlice, left, width);
 
       if (area) {
         result.push({
-          sample: element,
+          sample: sample,
           left: area.left,
           width: area.width
         });

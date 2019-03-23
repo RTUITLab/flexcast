@@ -81,6 +81,9 @@ export default class CTimeLine extends Vue {
 
     for (let i = 0; i < this.timelines.length; ++i) {
       const timeline = (this.$refs[`timeline-${i}`] as any)[0];
+      if (timeline == null) {
+        continue;
+      }
 
       timeline.updateVisibleItems({
         offsetLeft: xOffset,
@@ -99,9 +102,18 @@ export default class CTimeLine extends Vue {
 
     this.context.beginPath();
 
-    let elapsedSeconds = Math.ceil(xOffset / state.pps);
+    let step = 1;
+    if (state.pps < 20) {
+      step = 15;
+    } else if (state.pps < 45) {
+      step = 5;
+    }
 
-    let x = elapsedSeconds * state.pps - xOffset;
+    const pixelStep = state.pps * step;
+
+    let elapsedSteps = Math.ceil(xOffset / pixelStep);
+
+    let x = elapsedSteps * pixelStep - xOffset;
     const maxX = this.timelineElement.clientWidth;
 
     this.context.font = '16px Arial';
@@ -112,17 +124,18 @@ export default class CTimeLine extends Vue {
       this.context.moveTo(x, 0);
       this.context.lineTo(x, height);
 
-      const minutes = Math.floor(elapsedSeconds / 60);
-      const seconds = elapsedSeconds - minutes * 60;
+      const minutes = Math.floor((elapsedSteps * step) / 60);
+      const seconds = elapsedSteps * step - minutes * 60;
 
       this.context.fillText(
         `${this.pad(minutes, 2)}:${this.pad(seconds, 2)}`,
         x + 3,
         height - 3
       );
-      ++elapsedSeconds;
 
-      x += state.pps;
+      ++elapsedSteps;
+
+      x += pixelStep;
     }
 
     this.context.stroke();
@@ -210,7 +223,7 @@ export default class CTimeLine extends Vue {
     background-color: red;
     display: block;
     width: 1px;
-    z-index: 999999;
+    z-index: 1;
   }
 }
 </style>

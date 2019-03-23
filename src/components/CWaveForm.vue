@@ -76,7 +76,11 @@ export default class CWaveForm extends Vue {
       return;
     }
     this.pps = state.pps;
-    this.wavesurfer.zoom(state.pps);
+
+    new Promise((resolve, reject) => {
+      this.wavesurfer.zoom(state.pps);
+      resolve();
+    });
   }
 
   updateVolume() {
