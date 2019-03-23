@@ -76,19 +76,32 @@ export default class CTimeLine extends Vue {
     const xOffset = this.timelineElement.scrollLeft;
     const yOffset = this.timelineElement.scrollTop;
 
-    let x = Math.ceil(xOffset / this.pps) * this.pps - xOffset;
+    let elapsedSeconds = Math.ceil(xOffset / this.pps);
+
+    let x = elapsedSeconds * this.pps - xOffset;
     const maxX = this.timelineElement.clientWidth;
 
-    console.log(x);
+    this.context.font = '16px Arial';
+    this.context.fillStyle = '#11706D';
+    this.context.strokeStyle = '#03282D';
 
     while (x < maxX) {
       this.context.moveTo(x, 0);
       this.context.lineTo(x, height);
 
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds - minutes * 60;
+
+      this.context.fillText(
+        `${this.pad(minutes, 2)}:${this.pad(seconds, 2)}`,
+        x + 3,
+        height - 3
+      );
+      ++elapsedSeconds;
+
       x += this.pps;
     }
 
-    this.context.strokeStyle = '#03282D';
     this.context.stroke();
   }
 
@@ -99,6 +112,12 @@ export default class CTimeLine extends Vue {
 
     this.redraw();
     e.preventDefault();
+  }
+
+  pad(n: number, width: number, z?: string) {
+    z = z || '0';
+    let r = n.toString();
+    return r.length >= width ? n : new Array(width - r.length + 1).join(z) + n;
   }
 }
 </script>
@@ -114,26 +133,22 @@ export default class CTimeLine extends Vue {
     height: 0px;
   }
   &::-webkit-scrollbar-thumb {
-    background: #e1e1e1;
-    border: 0px none #ffffff;
+    background: #9cefff;
+    border: 2px solid rgba(100, 180, 186, 0.85);
+    border-radius: 0px;
   }
   &::-webkit-scrollbar-thumb:hover {
     background: #ffffff;
     cursor: pointer;
+    border-radius: 0px;
   }
   &::-webkit-scrollbar-thumb:active {
     background: #e0e0e0;
-  }
-  &::-webkit-scrollbar-track {
-    background: #666666;
-    border: 0px none #ffffff;
     border-radius: 0px;
   }
-  &::-webkit-scrollbar-track:hover {
-    background: #666666;
-  }
-  &::-webkit-scrollbar-track:active {
-    background: #333333;
+  &::-webkit-scrollbar-track {
+    background-color: #0b4e51;
+    border-radius: 0px;
   }
   &::-webkit-scrollbar-corner {
     background: transparent;
