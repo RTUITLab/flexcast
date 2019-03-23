@@ -17,7 +17,6 @@ export class Analyzer {
         const tailAnalyzer = this.context.createAnalyser();
         headPart.connect(headAnalyzer);
         tailPart.connect(tailAnalyzer);
-        tailAnalyzer.connect(this.context.destination);
         const headPromise = this.AnalyzeInternal(
             headPart,
             headAnalyzer,
@@ -27,7 +26,6 @@ export class Analyzer {
             tailAnalyzer,
             this.data.duration - seconds
         );
-        console.log(this.data.duration);
         return Promise.all([headPromise, tailPromise]).then(args => new Beats(args[0], args[1]));
     }
 
