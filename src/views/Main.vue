@@ -1,13 +1,13 @@
 <template>
   <div class="home">
     <div class="sidebar">
-      <c-sample-list class="sidebar-item"></c-sample-list>
+      <c-sample-list class="sidebar-item"/>
 
-      <c-controls class="sidebar-item" @zoomChanged="handleZoom"/>
+      <c-controls class="sidebar-item"/>
     </div>
 
     <div class="timeline">
-      <c-timeline :pps="zoom" :timelines="timelines"/>
+      <c-timeline :timelines="samples.map(v => [v])"/>
     </div>
   </div>
 </template>
@@ -17,9 +17,10 @@ import { Component, Vue } from 'vue-property-decorator';
 import CControls from '@/components/CControls.vue';
 import CSampleList from '@/components/CSampleList.vue';
 import CTimeLine from '@/components/CTimeLine.vue';
-import { Composer } from '@/model/Composer';
 
+import { Composer } from '@/model/Composer';
 import { Sample } from '@/model/Sample';
+import state from '@/model/State';
 
 @Component({
   components: {
@@ -29,32 +30,27 @@ import { Sample } from '@/model/Sample';
   }
 })
 export default class Home extends Vue {
-  private zoom: number = 50;
+  private samples: Sample[] = [];
 
-  handleZoom(zoom: number) {
-    this.zoom = zoom;
-  }
+  created() {
+    //const composer = new Composer();
+    //composer.Run(this.timelines.flatMap((s) => s[0]));
 
-  async created() {
-    const composer = new Composer();
-    composer.Run(this.timelines.flatMap(s => s[0]));
-  }
-
-  get timelines() {
-    return [
-      [
-        {
-          offset: 0,
-          url: 'https://files.rtuitlab.ru/green-light.mp3'
-        }
-      ],
-      [
-        {
-          offset: 4,
-          url: 'https://files.rtuitlab.ru/subaru.mp3'
-        }
-      ]
+    state.samples = [
+      new Sample('https://files.rtuitlab.ru/green-light.mp3', 0),
+      new Sample('https://files.rtuitlab.ru/subaru.mp3', 4)
     ];
+
+    state.on('samplesChanged', this.updateSamples);
+    this.updateSamples();
+
+    state.on('ready', () => {
+      console.log('Hello world');
+    });
+  }
+
+  updateSamples() {
+    this.samples = state.samples;
   }
 }
 </script>

@@ -7,6 +7,7 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { Sample } from '@/model/Sample';
+import state from '@/model/State';
 
 import WaveSurfer from 'wavesurfer.js';
 
@@ -17,15 +18,8 @@ export default class CWaveForm extends Vue {
   @Prop()
   public sample!: Sample;
 
-  @Prop({
-    default: 50
-  })
-  public pps!: number;
-
-  @Prop({
-    default: 0.2
-  })
-  public volume!: Number;
+  public volume: number = 1;
+  public pps: number = 50;
 
   private sampleId: Number = 0;
   private wavesurfer: any = null;
@@ -51,7 +45,11 @@ export default class CWaveForm extends Vue {
       this.wavesurfer.toggleInteraction();
       this.wavesurfer.toggleScroll();
 
-      this.wavesurfer.zoom(this.pps);
+      state.on('ppsChanged', this.updateZoom);
+      this.updateZoom();
+
+      state.on('volumeChanged', this.updateVolume);
+      this.updateVolume();
 
       this.wavesurfer.on('error', (err: any) => {
         console.log(err);
@@ -61,21 +59,32 @@ export default class CWaveForm extends Vue {
 
       this.wavesurfer.on('ready', () => {
         const duration = this.wavesurfer.getDuration();
-        this.$emit('waveformReady', {
-          id: this.sampleId,
-          sample: this.sample,
-          duration
-        });
+        this.sample.duration = duration;
+        state.updateSample(this.sample);
+      });
+
+      state.on('playPause', () => {
+        if (this.sample.isComplete) {
+          this.wavesurfer.playPause();
+        }
       });
     });
   }
 
-  @Watch('pps', {
-    immediate: false
-  })
-  onPpsChanged(value: number, old: number) {
-    this.pps = value;
-    this.wavesurfer.zoom(this.pps);
+  updateZoom() {
+    if (this.wavesurfer == null) {
+      return;
+    }
+    this.pps = state.pps;
+    this.wavesurfer.zoom(state.pps);
+  }
+
+  updateVolume() {
+    if (this.wavesurfer == null) {
+      return;
+    }
+    this.volume = state.volume;
+    this.wavesurfer.setVolume(state.volume);
   }
 
   get style() {

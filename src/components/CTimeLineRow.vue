@@ -4,7 +4,6 @@
       v-for="(sample, index) in samples"
       :key="`waveform-${index}`"
       :sample="sample"
-      :pps="pps"
       @waveformReady="onReady"
     />
 
@@ -24,6 +23,7 @@ import CWaveForm from '@/components/CWaveForm.vue';
 
 import { Sample, ISample } from '@/model/Sample';
 import { IWindowSlice, contains } from '@/model/WindowSlice';
+import state from '@/model/State';
 
 interface ISampleItem {
   id: number;
@@ -49,9 +49,6 @@ export default class CTimeLineRow extends Vue {
   })
   public samples!: Sample[];
 
-  @Prop()
-  public pps!: number;
-
   private sampleItems: Map<number, ISampleItem> = new Map<
     number,
     ISampleItem
@@ -68,8 +65,8 @@ export default class CTimeLineRow extends Vue {
     let result: IVisibleItem[] = [];
 
     this.sampleItems.forEach((element) => {
-      const left = element.sample.offset * this.pps;
-      const width = element.duration * this.pps;
+      const left = element.sample.offset * state.pps;
+      const width = element.duration * state.pps;
 
       const area = contains(windowSlice, left, width);
 

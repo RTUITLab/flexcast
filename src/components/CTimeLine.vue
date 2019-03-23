@@ -6,7 +6,6 @@
       v-for="(samples, index) in timelines"
       :key="`timeline-${index}`"
       :samples="samples"
-      :pps="pps"
       :ref="`timeline-${index}`"
       @needsRedraw="redraw"
     />
@@ -21,6 +20,7 @@ import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
 import { IWindowSlice } from '@/model/WindowSlice';
 import { Sample } from '@/model/Sample';
+import state from '@/model/State';
 
 @Component({
   components: {
@@ -38,9 +38,6 @@ export default class CTimeLine extends Vue {
     default: []
   })
   public timelines!: Sample[][];
-
-  @Prop()
-  public pps!: number;
 
   mounted() {
     this.timelineElement = this.$refs['timeline'] as HTMLElement;
@@ -61,6 +58,8 @@ export default class CTimeLine extends Vue {
     );
 
     this.timelineElement.addEventListener('mousemove', this.updateCursor);
+
+    state.on('ppsChanged', this.redraw);
   }
 
   updateCursor(e: any) {
@@ -100,9 +99,9 @@ export default class CTimeLine extends Vue {
 
     this.context.beginPath();
 
-    let elapsedSeconds = Math.ceil(xOffset / this.pps);
+    let elapsedSeconds = Math.ceil(xOffset / state.pps);
 
-    let x = elapsedSeconds * this.pps - xOffset;
+    let x = elapsedSeconds * state.pps - xOffset;
     const maxX = this.timelineElement.clientWidth;
 
     this.context.font = '16px Arial';
@@ -123,7 +122,7 @@ export default class CTimeLine extends Vue {
       );
       ++elapsedSeconds;
 
-      x += this.pps;
+      x += state.pps;
     }
 
     this.context.stroke();

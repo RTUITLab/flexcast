@@ -1,14 +1,22 @@
 <template>
   <div class="c-controls">
     <div class="slidecontainer">
-      <input type="range" min="1" max="100" value="50" class="slider">
+      <input
+        type="range"
+        v-model="volume"
+        min="0"
+        max="100"
+        value="100"
+        class="slider"
+        @input="volumeChanged"
+      >
     </div>
     <div class="button play noselect" @click="togglePlay">
       <span v-if="isPlaying">
-        <img src="icons/play.svg">
+        <img src="icons/pause.svg">
       </span>
       <span v-else>
-        <img src="icons/pause.svg">
+        <img src="icons/play.svg">
       </span>
     </div>
     <div class="slidecontainer">
@@ -23,6 +31,8 @@ import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
 
+import state from '@/model/State';
+
 @Component({
   components: {
     Icon
@@ -30,15 +40,23 @@ import 'vue-awesome/icons/pause';
 })
 export default class CControls extends Vue {
   private isPlaying: boolean = false;
+
   private zoom: number = 50;
+  private volume: number = 100;
 
   togglePlay() {
     this.isPlaying = !this.isPlaying;
-    this.$emit('playPause', this.isPlaying);
+    state.isPlaying = this.isPlaying;
+  }
+
+  volumeChanged(value: Number) {
+    this.volume = Number(this.volume);
+    state.volume = this.volume / 100;
   }
 
   zoomChanged(value: Number) {
-    this.$emit('zoomChanged', Number(this.zoom));
+    this.zoom = Number(this.zoom);
+    state.pps = this.zoom;
   }
 }
 </script>
