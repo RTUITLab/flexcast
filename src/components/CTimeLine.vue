@@ -68,6 +68,8 @@ export default class CTimeLine extends Vue {
 
     state.on('ready', this.redraw);
     this.redraw();
+
+    window.addEventListener('resize', this.redraw);
   }
 
   updateCursor() {
@@ -86,6 +88,10 @@ export default class CTimeLine extends Vue {
   }
 
   moveCursor(e: any) {
+    if (!e.altKey) {
+      return;
+    }
+
     const x = e.pageX - this.timelineElement.offsetLeft;
 
     const pixels = this.timelineElement.scrollLeft + x;
@@ -259,6 +265,7 @@ export default class CTimeLine extends Vue {
   overflow: auto;
   background-color: #00191d;
   height: 100%;
+
   @include scrollbar();
 
   .grid-canvas,
