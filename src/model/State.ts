@@ -71,29 +71,35 @@ export class State {
     this._listeners.set(event, listeners.filter((v) => v !== handler));
   }
 
-  public addSource(url: string) {
-    const res = new Promise((resolve, reject) => {
-      axios
-        .get(url, { responseType: 'arraybuffer' })
-        .then((buffer) => {
-          return this._context.decodeAudioData(buffer.data);
-        })
-        .then((decoded) => {
-          this._sources.push({
-            url,
-            data: decoded,
-            state: 'analyzing'
-          });
+  public async addSource(url: string) {
+    var raw = await axios.get(url, { responseType: 'blob' });
+    console.log(raw.data);
 
-          this.fire('sourcesChanged');
-
-          //   return new Analyzer(this._context, decoded).Analyze(10);
-          // })
-          // .then((beats) => {
-
-          this.updateBeats(url, new Beats([], []));
+    var arrayBuffer: ArrayBuffer;
+    var fileReader = new FileReader();
+    fileReader.onload = event => {
+      arrayBuffer = (event.target as any).result;
+      this._context.decodeAudioData(arrayBuffer).then(decoded => {
+        this._sources.push({
+          url,
+          data: decoded,
+          state: 'analyzing'
         });
+  
+        this.fire('sourcesChanged');
+      });
+    };
+    fileReader.readAsArrayBuffer(raw.data);
+    var formData = new FormData();
+    formData.append("file", new Blob([raw.data], { type: 'application/octet-stream' }));
+
+
+    var beats = await axios.post<Beats>('http://192.168.1.192:5000/api/naudio?offset=2', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
+    this.updateBeats(url, beats.data);
   }
 
   public updateBeats(sourceUrl: string, beats: Beats) {
