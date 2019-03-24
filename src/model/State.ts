@@ -3,6 +3,7 @@ import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
 import { Analyzer, Beats } from './Analyzer';
 import { SampleMerger } from './SampleMerger';
+import { InstrumentType } from './Instrument';
 
 type StateEvent =
   | 'sourcesChanged'
@@ -16,18 +17,12 @@ type StateEvent =
   | 'seeked'
   | 'handleStartedFinished'
   | 'handleMoved'
-  | 'scrollToCursor';
+  | 'scrollToCursor'
+  | 'instrumentChanged';
 
 type StateEventHandler = () => void;
 
 export class State {
-  constructor() {
-    window.addEventListener("keydown", () => {
-      this.mergeSamples();
-      
-    })
-    
-  }
 
   private _context = new AudioContext();
 
@@ -54,6 +49,8 @@ export class State {
   private _samples: Sample[] = [];
 
   private _sourceHandle: ISourceHandle | null = null;
+
+  private _instrument: InstrumentType | null = null;
 
   public updateSample(sample: Sample) {
     const index = this.samples.findIndex((value) => value.id === sample.id);
@@ -87,28 +84,34 @@ export class State {
 
     var arrayBuffer: ArrayBuffer;
     var fileReader = new FileReader();
-    fileReader.onload = event => {
+    fileReader.onload = (event) => {
       arrayBuffer = (event.target as any).result;
-      this._context.decodeAudioData(arrayBuffer).then(decoded => {
+      this._context.decodeAudioData(arrayBuffer).then((decoded) => {
         this._sources.push({
           url,
           data: decoded,
           state: 'analyzing'
         });
-  
+
         this.fire('sourcesChanged');
       });
     };
     fileReader.readAsArrayBuffer(raw.data);
     var formData = new FormData();
-    formData.append("file", new Blob([raw.data], { type: 'application/octet-stream' }));
+    formData.append(
+      'file',
+      new Blob([raw.data], { type: 'application/octet-stream' })
+    );
 
-
-    var beats = await axios.post<Beats>('http://192.168.1.192:5000/api/naudio?offset=2', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    var beats = await axios.post<Beats>(
+      'http://192.168.1.192:5000/api/naudio?offset=2',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       }
-    });
+    );
     this.updateBeats(url, beats.data);
   }
 
@@ -240,6 +243,15 @@ export class State {
 
   public get maxTime() {
     return this._maxTime;
+  }
+
+  public set instrument(instrument: InstrumentType | null) {
+    this._instrument = instrument;
+    this.fire('instrumentChanged');
+  }
+
+  public get instrument() {
+    return this._instrument;
   }
 
   private checkComplete() {
