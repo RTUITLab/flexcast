@@ -27,6 +27,8 @@ export default class CWaveForm extends Vue {
 
   private shouldPlay: boolean = false;
 
+  private gain?: ScriptProcessorNode;
+
   created() {
     this.sampleId = SAMPLE_ID++;
   }
@@ -64,8 +66,35 @@ export default class CWaveForm extends Vue {
         state.updateSample(this.sample);
       });
 
-      this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
+      this.gain = this.wavesurfer.backend.ac.createScriptProcessor(
+        4096,
+        1,
+        1
+      ) as ScriptProcessorNode;
+      this.gain.onaudioprocess = (ev) => {
+        // The input buffer is the song we loaded earlier
+        const inputBuffer = ev.inputBuffer;
 
+        // The output buffer contains the samples that will be modified and played
+        const outputBuffer = ev.outputBuffer;
+        for (
+          let channel = 0;
+          channel < outputBuffer.numberOfChannels;
+          channel++
+        ) {
+          const inputData = inputBuffer.getChannelData(channel);
+          const outputData = outputBuffer.getChannelData(channel);
+
+          // Loop through the 4096 samples
+          for (var sample = 0; sample < inputBuffer.length; sample++) {
+            // make output equal to the same as the input
+            outputData[sample] = inputData[sample];
+          }
+        }
+      };
+      this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
+      this.wavesurfer.backend.setFilter(this.gain);
+      console.log(this.wavesurfer.getFilters());
       state.on('playing', this.updatePlaying);
       state.on('playPause', this.updatePlaying);
       state.on('seeked', this.handleSeek);
@@ -103,7 +132,8 @@ export default class CWaveForm extends Vue {
     this.shouldPlay = state.isPlaying;
 
     const inRange = this.isInRange();
-
+    if (inRange) {
+    }
     if (this.isPlaying && (!this.shouldPlay || !inRange)) {
       this.wavesurfer.pause();
       this.isPlaying = false;

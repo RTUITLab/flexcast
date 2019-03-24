@@ -2,6 +2,7 @@ import { Sample, ISource, ISourceHandle } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
 import { Analyzer, Beats } from './Analyzer';
+import { SampleMerger } from './SampleMerger';
 
 type StateEvent =
   | 'sourcesChanged'
@@ -20,6 +21,14 @@ type StateEvent =
 type StateEventHandler = () => void;
 
 export class State {
+  constructor() {
+    window.addEventListener("keydown", () => {
+      this.mergeSamples();
+      
+    })
+    
+  }
+
   private _context = new AudioContext();
 
   private _sources: ISource[] = [];
@@ -203,6 +212,12 @@ export class State {
 
   public get samples() {
     return this._samples;
+  }
+
+  public mergeSamples() {
+    SampleMerger.MergeSamples(this._samples);
+    this.fire('samplesChanged');
+    this.checkComplete();
   }
 
   public setHandle(handle: ISourceHandle | null) {
