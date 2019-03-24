@@ -1,8 +1,10 @@
-import { Beats } from './Analyzer';
-
 let CURRENT_ID: number = 0;
 
 export type SourceState = 'analyzing' | 'complete';
+
+export class Beats {
+  constructor(public head: number[], public tail: number[]) {}
+}
 
 export interface ISource {
   url: string;

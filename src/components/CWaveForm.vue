@@ -11,6 +11,8 @@ import state from '@/model/State';
 
 import WaveSurfer from 'wavesurfer.js';
 
+import { Effect } from '@/model/Effects';
+
 let SAMPLE_ID = 0;
 
 @Component({})
@@ -27,7 +29,7 @@ export default class CWaveForm extends Vue {
 
   private shouldPlay: boolean = false;
 
-  private gain?: ScriptProcessorNode;
+  private effects: Effect[] = [];
 
   created() {
     this.sampleId = SAMPLE_ID++;
@@ -66,35 +68,8 @@ export default class CWaveForm extends Vue {
         state.updateSample(this.sample);
       });
 
-      this.gain = this.wavesurfer.backend.ac.createScriptProcessor(
-        4096,
-        1,
-        1
-      ) as ScriptProcessorNode;
-      this.gain.onaudioprocess = (ev) => {
-        // The input buffer is the song we loaded earlier
-        const inputBuffer = ev.inputBuffer;
-
-        // The output buffer contains the samples that will be modified and played
-        const outputBuffer = ev.outputBuffer;
-        for (
-          let channel = 0;
-          channel < outputBuffer.numberOfChannels;
-          channel++
-        ) {
-          const inputData = inputBuffer.getChannelData(channel);
-          const outputData = outputBuffer.getChannelData(channel);
-
-          // Loop through the 4096 samples
-          for (var sample = 0; sample < inputBuffer.length; sample++) {
-            // make output equal to the same as the input
-            outputData[sample] = inputData[sample];
-          }
-        }
-      };
       this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
-      this.wavesurfer.backend.setFilter(this.gain);
-      console.log(this.wavesurfer.getFilters());
+
       state.on('playing', this.updatePlaying);
       state.on('playPause', this.updatePlaying);
       state.on('seeked', this.handleSeek);
@@ -125,6 +100,8 @@ export default class CWaveForm extends Vue {
 
     this.wavesurfer.seekTo(progress);
 
+    this.updateEffects();
+
     this.updatePlaying();
   }
 
@@ -139,6 +116,7 @@ export default class CWaveForm extends Vue {
       this.isPlaying = false;
     } else if (!this.isPlaying && this.shouldPlay && this.isInRange()) {
       this.wavesurfer.play();
+      this.updateEffects();
       this.isPlaying = true;
     }
   }
@@ -173,6 +151,77 @@ export default class CWaveForm extends Vue {
 
     this.volume = state.volume;
     this.wavesurfer.setVolume(state.volume);
+  }
+
+  generateExponentialIn(start: number, current: number, duration: number) {
+    const N = 50;
+    const step = duration / N;
+
+    return Array.from(Array(N + 1).keys())
+      .map((x) => x * step)
+      .filter((x) => x + start >= current)
+      .map((x) => {
+        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
+        return 1 / (1 + Math.pow(Math.E, -t));
+      });
+  }
+
+  generateExponentialOut(start: number, current: number, duration: number) {
+    const N = 50;
+    const step = duration / N;
+
+    return Array.from(Array(N + 1).keys())
+      .map((x) => x * step)
+      .filter((x) => x + start >= current)
+      .map((x) => {
+        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
+        return 1 - 1 / (1 + Math.pow(Math.E, -t));
+      });
+  }
+
+  updateEffects() {
+    const sampleTime = state.time / 1000 - this.sample.offset;
+    const currentTime = this.wavesurfer.backend.ac.currentTime;
+
+    const node = this.wavesurfer.backend.ac.createGain();
+
+    const fadeInDuration = 10;
+
+    if (sampleTime <= fadeInDuration) {
+      const values = this.generateExponentialIn(0, sampleTime, fadeInDuration);
+
+      if (values.length > 0) {
+        node.gain.setValueAtTime(values[0], currentTime);
+        node.gain.setValueCurveAtTime(
+          values,
+          currentTime,
+          fadeInDuration - sampleTime
+        );
+      }
+    }
+
+    const fadeOutDuration = 10;
+
+    const fadeOutStart = this.sample.duration - fadeOutDuration;
+    const elapsed = this.sample.duration - sampleTime;
+
+    if (sampleTime < fadeOutStart) {
+      node.gain.setValueAtTime(1.0, currentTime + elapsed);
+    }
+    if (sampleTime >= fadeOutStart && sampleTime < this.sample.duration) {
+      const values = this.generateExponentialOut(
+        fadeOutStart,
+        sampleTime,
+        fadeOutDuration
+      );
+
+      if (values.length > 0) {
+        node.gain.setValueAtTime(values[0], currentTime);
+        node.gain.setValueCurveAtTime(values, currentTime, elapsed);
+      }
+    }
+
+    this.wavesurfer.backend.setFilter(node);
   }
 
   get style() {

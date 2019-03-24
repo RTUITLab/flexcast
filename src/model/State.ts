@@ -1,7 +1,6 @@
-import { Sample, ISource, ISourceHandle } from '@/model/Sample';
+import { Sample, ISource, ISourceHandle, Beats } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
-import { Analyzer, Beats } from './Analyzer';
 import { SampleMerger } from './SampleMerger';
 import { InstrumentType } from './Instrument';
 
@@ -23,7 +22,6 @@ type StateEvent =
 type StateEventHandler = () => void;
 
 export class State {
-
   private _context = new AudioContext();
 
   private _sources: ISource[] = [];
@@ -80,10 +78,10 @@ export class State {
   }
 
   public async addSource(url: string) {
-    var raw = await axios.get(url, { responseType: 'blob' });
+    const raw = await axios.get(url, { responseType: 'blob' });
 
-    var arrayBuffer: ArrayBuffer;
-    var fileReader = new FileReader();
+    let arrayBuffer: ArrayBuffer;
+    const fileReader = new FileReader();
     fileReader.onload = (event) => {
       arrayBuffer = (event.target as any).result;
       this._context.decodeAudioData(arrayBuffer).then((decoded) => {
@@ -97,14 +95,14 @@ export class State {
       });
     };
     fileReader.readAsArrayBuffer(raw.data);
-    var formData = new FormData();
+    const formData = new FormData();
     formData.append(
       'file',
       new Blob([raw.data], { type: 'application/octet-stream' })
     );
 
-    var beats = await axios.post<Beats>(
-      'http://192.168.1.192:5000/api/naudio?offset=2',
+    const beats = await axios.post<Beats>(
+      'http://10.100.110.131:5000/api/naudio?offset=2',
       formData,
       {
         headers: {
@@ -252,6 +250,10 @@ export class State {
 
   public get instrument() {
     return this._instrument;
+  }
+
+  public get audioContext() {
+    return this._context;
   }
 
   private checkComplete() {
