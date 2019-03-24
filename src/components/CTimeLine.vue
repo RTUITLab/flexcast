@@ -27,9 +27,8 @@ import { Component, Watch, Prop, Vue } from 'vue-property-decorator';
 import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
 import { IWindowSlice } from '@/model/WindowSlice';
-import { Sample } from '@/model/Sample';
-import state, { ISourceHandle } from '@/model/State';
-import { moveCursor } from 'readline';
+import { Sample, ISource, ISourceHandle } from '@/model/Sample';
+import state from '@/model/State';
 
 @Component({
   components: {
@@ -90,16 +89,21 @@ export default class CTimeLine extends Vue {
     this.sourceHandle = state.sourceHandle;
 
     if (this.sourceHandle == null) {
+      if (this.newSample) {
+        state.addSample(this.newSample);
+      }
+
       this.newSample = null;
       return;
     }
 
     const xOffset = this.timelineElement.scrollLeft;
     const x = this.sourceHandle.pageX - this.timelineElement.offsetLeft;
-    const offset = (xOffset + x) / state.pps;
+    const offset = Math.max(0, (xOffset + x) / state.pps);
 
     if (this.newSample == null) {
-      this.newSample = new Sample(this.sourceHandle.data, offset);
+      const source = this.sourceHandle.source;
+      this.newSample = new Sample(source, offset);
     } else {
       this.newSample.offset = offset;
     }
@@ -140,23 +144,17 @@ export default class CTimeLine extends Vue {
     const width = this.timelineElement.clientWidth;
     const height = this.timelineElement.clientHeight;
 
-    for (let i = 0; i < this.timelines.length; ++i) {
-      const timeline = (this.$refs[`timeline-${i}`] as any)[0];
+    for (let i = 0; i <= this.timelines.length; ++i) {
+      const timeline =
+        i < this.timelines.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
       if (timeline == null) {
         continue;
       }
 
       timeline.updateVisibleItems({
-        offsetLeft: xOffset,
-        offsetTop: yOffset,
-        width,
-        height
-      });
-    }
-
-    const timelineNew = this.$refs['timeline-new'] as any;
-    if (timelineNew) {
-      timelineNew.updateVisibleItems({
         offsetLeft: xOffset,
         offsetTop: yOffset,
         width,
@@ -229,11 +227,46 @@ export default class CTimeLine extends Vue {
     this.cursorContext.beginPath();
 
     const timePixels = (state.time * state.pps) / 1000;
+    this.cursorContext.strokeStyle = '#dd282D';
 
-    if (timePixels >= xOffset && timePixels <= xOffset + width) {
-      this.cursorContext.strokeStyle = '#dd282D';
+    const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
+
+    if (checkInRange(timePixels)) {
       this.cursorContext.moveTo(timePixels - xOffset, 0);
       this.cursorContext.lineTo(timePixels - xOffset, height);
+    }
+
+    for (let i = 0; i <= this.timelines.length; ++i) {
+      const timeline =
+        i < this.timelines.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
+      if (timeline == null) {
+        continue;
+      }
+
+      const height = 128 + 5;
+
+      const samples: Sample[] = timeline.getSamples();
+      samples.forEach((sample) => {
+        if (sample.source.beats == null) {
+          return;
+        }
+
+        const beats = sample.source.beats;
+
+        beats.head.concat(beats.tail).forEach((beat) => {
+          const x = (beat + sample.offset) * state.pps;
+
+          if (!checkInRange(x)) {
+            return;
+          }
+
+          this.cursorContext.moveTo(x - xOffset, height * i);
+          this.cursorContext.lineTo(x - xOffset, height * (i + 1));
+        });
+      });
     }
 
     this.cursorContext.stroke();

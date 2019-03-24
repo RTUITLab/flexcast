@@ -18,7 +18,6 @@ import CControls from '@/components/CControls.vue';
 import CSampleList from '@/components/CSampleList.vue';
 import CTimeLine from '@/components/CTimeLine.vue';
 
-import { Composer } from '@/model/Composer';
 import { Sample } from '@/model/Sample';
 import state from '@/model/State';
 
@@ -40,14 +39,6 @@ export default class Home extends Vue {
   mounted() {
     state.addSource('https://files.rtuitlab.ru/green-light.mp3');
     state.addSource('https://files.rtuitlab.ru/subaru.mp3');
-
-    state.samples = [
-      new Sample('https://files.rtuitlab.ru/green-light.mp3', 0),
-      new Sample('https://files.rtuitlab.ru/subaru.mp3', 4)
-    ];
-
-    const composer = new Composer();
-    composer.Run(state.samples);
   }
 
   updateSamples() {

@@ -58,13 +58,13 @@ export default class CWaveForm extends Vue {
         console.log(err);
       });
 
-      this.wavesurfer.load(this.sample.url);
-
       this.wavesurfer.on('ready', () => {
         const duration = this.wavesurfer.getDuration();
         this.sample.duration = duration;
         state.updateSample(this.sample);
       });
+
+      this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
 
       state.on('playing', this.updatePlaying);
       state.on('playPause', this.updatePlaying);

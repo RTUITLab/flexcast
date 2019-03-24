@@ -7,7 +7,7 @@
         class="item noselect"
         :style="generateStyle(item)"
         :key="`item-${item.sample.id}`"
-      >{{item.sample.url}}</div>
+      >{{item.sample.source.url}}</div>
     </template>
   </div>
 </template>
@@ -70,6 +70,10 @@ export default class CTimeLineRow extends Vue {
       left: `${item.left}px`,
       width: `${item.width}px`
     };
+  }
+
+  public getSamples() {
+    return this.samples;
   }
 }
 </script>
