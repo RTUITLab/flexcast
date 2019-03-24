@@ -1,5 +1,24 @@
 <template>
   <div class="c-controls">
+    <div class="row instruments">
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('cursor')"
+        @click="selectInstrument('cursor')"
+      >
+        <img src="icons/cursor.svg">
+      </div>
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('move')"
+        @click="selectInstrument('move')"
+      >
+        <img src="icons/arrows.svg">
+      </div>
+      <div class="button noselect">
+        <img src="icons/blocks.svg">
+      </div>
+    </div>
     <div class="row">
       <div class="button noselect" @click="buttonBegin">
         <img src="icons/begin.svg">
@@ -62,6 +81,7 @@ import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
 
 import state from '@/model/State';
+import { InstrumentType } from '@/model/Instrument';
 
 @Component({
   components: {
@@ -76,9 +96,12 @@ export default class CControls extends Vue {
   private zoom: number = 20;
   private volume: number = 100;
 
+  private instrument: InstrumentType | null = null;
+
   mounted() {
     state.on('ready', this.handleReady);
     state.on('playPause', this.updateState);
+    state.on('instrumentChanged', this.updateInstrument);
   }
 
   handleReady() {
@@ -168,12 +191,25 @@ export default class CControls extends Vue {
     state.time = state.maxTime;
     state.scrollToCursor();
   }
+
+  updateInstrument() {
+    this.instrument = state.instrument;
+  }
+
+  selectInstrument(instrument: InstrumentType) {
+    state.instrument = instrument;
+  }
+
+  getInstrumentClass(instrument: InstrumentType) {
+    return {
+      active: this.instrument != null && this.instrument == instrument
+    };
+  }
 }
 </script>
 
 <style lang="scss">
 .c-controls {
-  padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -185,6 +221,22 @@ export default class CControls extends Vue {
     flex-direction: row;
     justify-content: center;
     justify-items: center;
+    padding-left: 10px;
+    padding-right: 10px;
+
+    &.instruments {
+      background-color: #021d20;
+
+      .button {
+        margin: 0;
+        width: 40px;
+        padding: 5px;
+      }
+
+      .active {
+        background-color: #010c0e;
+      }
+    }
   }
 
   .slidecontainer {

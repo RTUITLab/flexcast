@@ -1,0 +1,17 @@
+
+<svg width="19px" height="32px" viewBox="0 0 19 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#7EFCFF" offset="0%"></stop>
+            <stop stop-color="#4DB1B3" offset="23.3899916%"></stop>
+            <stop stop-color="#33898B" offset="40.0786529%"></stop>
+            <stop stop-color="#165D5E" offset="63.811761%"></stop>
+            <stop stop-color="#023F40" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="mixer" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Desktop-HD" transform="translate(-978.000000, -649.000000)" fill="url(#linearGradient-1)" stroke="#006A7E">
+            <path d="M988,671 L988,680 L983,680 L983,671 L976,671 L985.5,649 L995,671 L988,671 Z" id="Combined-Shape" transform="translate(985.500000, 664.500000) rotate(-25.000000) translate(-985.500000, -664.500000) "></path>
+        </g>
+    </g>
+</svg>
