@@ -1,9 +1,9 @@
 import { Sample, ISource, ISourceHandle } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
-import { Analyzer, Beats } from './Analyzer';
 import { SampleMerger } from './SampleMerger';
 import { InstrumentType } from './Instrument';
+import { Beats } from './Beats';
 
 type StateEvent =
   | 'sourcesChanged'
@@ -104,7 +104,7 @@ export class State {
     );
 
     var beats = await axios.post<Beats>(
-      'http://192.168.1.192:5000/api/naudio?offset=2',
+      'http://10.100.110.131:5000/api/naudio?offset=2',
       formData,
       {
         headers: {
