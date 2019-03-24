@@ -144,23 +144,17 @@ export default class CTimeLine extends Vue {
     const width = this.timelineElement.clientWidth;
     const height = this.timelineElement.clientHeight;
 
-    for (let i = 0; i < this.timelines.length; ++i) {
-      const timeline = (this.$refs[`timeline-${i}`] as any)[0];
+    for (let i = 0; i <= this.timelines.length; ++i) {
+      const timeline =
+        i < this.timelines.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
       if (timeline == null) {
         continue;
       }
 
       timeline.updateVisibleItems({
-        offsetLeft: xOffset,
-        offsetTop: yOffset,
-        width,
-        height
-      });
-    }
-
-    const timelineNew = this.$refs['timeline-new'] as any;
-    if (timelineNew) {
-      timelineNew.updateVisibleItems({
         offsetLeft: xOffset,
         offsetTop: yOffset,
         width,
@@ -233,11 +227,46 @@ export default class CTimeLine extends Vue {
     this.cursorContext.beginPath();
 
     const timePixels = (state.time * state.pps) / 1000;
+    this.cursorContext.strokeStyle = '#dd282D';
 
-    if (timePixels >= xOffset && timePixels <= xOffset + width) {
-      this.cursorContext.strokeStyle = '#dd282D';
+    const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
+
+    if (checkInRange(timePixels)) {
       this.cursorContext.moveTo(timePixels - xOffset, 0);
       this.cursorContext.lineTo(timePixels - xOffset, height);
+    }
+
+    for (let i = 0; i <= this.timelines.length; ++i) {
+      const timeline =
+        i < this.timelines.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
+      if (timeline == null) {
+        continue;
+      }
+
+      const height = 128 + 5;
+
+      const samples: Sample[] = timeline.getSamples();
+      samples.forEach((sample) => {
+        if (sample.source.beats == null) {
+          return;
+        }
+
+        const beats = sample.source.beats;
+
+        beats.head.concat(beats.tail).forEach((beat) => {
+          const x = (beat + sample.offset) * state.pps;
+
+          if (!checkInRange(x)) {
+            return;
+          }
+
+          this.cursorContext.moveTo(x - xOffset, height * i);
+          this.cursorContext.lineTo(x - xOffset, height * (i + 1));
+        });
+      });
     }
 
     this.cursorContext.stroke();

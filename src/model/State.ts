@@ -87,10 +87,11 @@ export class State {
 
           this.fire('sourcesChanged');
 
-          return new Analyzer(this._context, decoded).Analyze(10);
-        })
-        .then((beats) => {
-          this.updateBeats(url, beats);
+          //   return new Analyzer(this._context, decoded).Analyze(10);
+          // })
+          // .then((beats) => {
+
+          this.updateBeats(url, new Beats([], []));
         });
     });
   }

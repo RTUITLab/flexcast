@@ -71,6 +71,10 @@ export default class CTimeLineRow extends Vue {
       width: `${item.width}px`
     };
   }
+
+  public getSamples() {
+    return this.samples;
+  }
 }
 </script>
 
