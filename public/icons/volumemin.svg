@@ -1,0 +1,20 @@
+
+<svg width="23px" height="40px" viewBox="0 0 23 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#7EFCFF" offset="0%"></stop>
+            <stop stop-color="#023F40" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="23.6375096%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#023F40" offset="0%"></stop>
+            <stop stop-color="#4CB0B3" offset="87.0328538%"></stop>
+            <stop stop-color="#7EFCFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="mixer" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Desktop-HD" transform="translate(-796.000000, -630.000000)" stroke="#006A7E">
+            <path d="M796.5,639.5 L796.5,659.5 L804.207107,659.5 L813.5,668.792893 L813.5,631.093775 L804.5,638.880652 L804.5,639.5 L796.5,639.5 Z" id="Combined-Shape" fill="url(#linearGradient-1)" transform="translate(805.000000, 650.000000) scale(1, -1) translate(-805.000000, -650.000000) "></path>
+            <rect id="Rectangle" fill="url(#linearGradient-2)" x="816.5" y="640.5" width="2" height="19"></rect>
+        </g>
+    </g>
+</svg>

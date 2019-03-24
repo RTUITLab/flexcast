@@ -1,26 +1,56 @@
 <template>
   <div class="c-controls">
-    <div class="slidecontainer">
-      <input
-        type="range"
-        v-model="volume"
-        min="0"
-        max="100"
-        value="100"
-        class="slider"
-        @input="volumeChanged"
-      >
+    <div class="row">
+      <div class="button noselect" @click="buttonBegin">
+        <img src="icons/begin.svg">
+      </div>
+      <div class="button noselect" @click="buttonBackward">
+        <img src="icons/backward.svg">
+      </div>
+      <div class="button play noselect" @click="togglePlay">
+        <span v-if="isPlaying">
+          <img src="icons/pause.svg">
+        </span>
+        <span v-else>
+          <img src="icons/play.svg">
+        </span>
+      </div>
+      <div class="button noselect" @click="buttonForward">
+        <img src="icons/forward.svg">
+      </div>
+      <div class="button noselect" @click="buttonEnd">
+        <img src="icons/end.svg">
+      </div>
     </div>
-    <div class="button play noselect" @click="togglePlay">
-      <span v-if="isPlaying">
-        <img src="icons/pause.svg">
-      </span>
-      <span v-else>
-        <img src="icons/play.svg">
-      </span>
+    <div class="row">
+      <div class="button noselect">
+        <img src="icons/volumemin.svg" height="25px">
+      </div>
+      <div class="slidecontainer">
+        <input
+          type="range"
+          v-model="volume"
+          min="0"
+          max="100"
+          value="100"
+          class="slider"
+          @input="volumeChanged"
+        >
+      </div>
+      <div class="button noselect">
+        <img src="icons/volumemax.svg" height="25px">
+      </div>
     </div>
-    <div class="slidecontainer">
-      <input type="range" v-model="zoom" min="1" max="200" class="slider" @input="zoomChanged">
+    <div class="row">
+      <div class="button noselect">
+        <img src="icons/lowscale.svg" height="20px">
+      </div>
+      <div class="slidecontainer">
+        <input type="range" v-model="zoom" min="1" max="200" class="slider" @input="zoomChanged">
+      </div>
+      <div class="button noselect">
+        <img src="icons/highscale.svg" height="20px">
+      </div>
     </div>
   </div>
 </template>
@@ -48,6 +78,7 @@ export default class CControls extends Vue {
 
   mounted() {
     state.on('ready', this.handleReady);
+    state.on('playPause', this.updateState);
   }
 
   handleReady() {
@@ -63,6 +94,10 @@ export default class CControls extends Vue {
     state.isPlaying = this.isPlaying;
   }
 
+  updateState() {
+    this.isPlaying = state.isPlaying;
+  }
+
   volumeChanged(value: Number) {
     this.volume = Number(this.volume);
     state.volume = this.volume / 100;
@@ -72,6 +107,67 @@ export default class CControls extends Vue {
     this.zoom = Number(this.zoom);
     state.pps = this.zoom;
   }
+
+  buttonBackward() {
+    const seconds = state.time / 1000;
+
+    const leftOrigins = state.samples
+      .map((v) => {
+        return seconds - v.offset;
+      })
+      .filter((v) => v > 0)
+      .sort((a, b) => {
+        if (a == b) {
+          return 0;
+        }
+
+        return a < b ? -1 : 1;
+      });
+
+    if (leftOrigins.length == 0) {
+      this.buttonBegin();
+      return;
+    }
+
+    state.time = (seconds - leftOrigins[0]) * 1000;
+
+    state.scrollToCursor();
+  }
+
+  buttonForward() {
+    const seconds = state.time / 1000;
+
+    const rightEnds = state.samples
+      .map((v) => {
+        return v.offset + v.duration - seconds;
+      })
+      .filter((v) => v > 0)
+      .sort((a, b) => {
+        if (a == b) {
+          return 0;
+        }
+
+        return a < b ? -1 : 1;
+      });
+
+    if (rightEnds.length == 0) {
+      this.buttonEnd();
+      return;
+    }
+
+    state.time = (rightEnds[0] + seconds) * 1000;
+    state.scrollToCursor();
+  }
+
+  buttonBegin() {
+    state.time = 0;
+    state.scrollToCursor();
+  }
+
+  buttonEnd() {
+    state.time = state.maxTime;
+    state.scrollToCursor();
+  }
 }
 </script>
 
@@ -79,15 +175,23 @@ export default class CControls extends Vue {
 .c-controls {
   padding: 10px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
   background-color: #03282d;
   justify-items: center;
+
+  .row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    justify-items: center;
+  }
 
   .slidecontainer {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    height: 40px;
     margin: 0px 5px;
 
     .slider {
@@ -129,6 +233,7 @@ export default class CControls extends Vue {
   .button {
     color: #232532;
     text-align: center;
+    margin: 5px;
 
     &:hover,
     &.active {
@@ -141,6 +246,12 @@ export default class CControls extends Vue {
       height: 50px;
       line-height: 50px;
       font-size: 20pt;
+    }
+
+    &:not(.play) {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
   }
 }
