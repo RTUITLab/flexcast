@@ -1,4 +1,4 @@
-import { Sample, ISource, ISourceHandle, Beats } from '@/model/Sample';
+import { Sample, ISource, ISourceHandle } from '@/model/Sample';
 import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
 import { SampleMerger } from './SampleMerger';
