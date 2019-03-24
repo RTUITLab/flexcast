@@ -14,7 +14,8 @@ type StateEvent =
   | 'playing'
   | 'seeked'
   | 'handleStartedFinished'
-  | 'handleMoved';
+  | 'handleMoved'
+  | 'scrollToCursor';
 
 type StateEventHandler = () => void;
 
@@ -37,6 +38,7 @@ export class State {
 
   private _time: number = 0;
   private _lastTimestamp: number = -1;
+  private _maxTime: number = 0;
 
   private _listeners: Map<StateEvent, StateEventHandler[]> = new Map();
 
@@ -142,6 +144,12 @@ export class State {
       this._lastTimestamp = timestamp;
 
       if (state.isPlaying) {
+        if (state._time >= this._maxTime) {
+          this._time = this._maxTime;
+          state.isPlaying = false;
+          return;
+        }
+
         window.requestAnimationFrame(callback);
       }
     };
@@ -212,7 +220,21 @@ export class State {
     return this._sourceHandle;
   }
 
+  public scrollToCursor() {
+    this.fire('scrollToCursor');
+  }
+
+  public get maxTime() {
+    return this._maxTime;
+  }
+
   private checkComplete() {
+    this._maxTime =
+      state.samples.reduce((max, c) => {
+        const end = c.offset + c.duration;
+        return end > max ? end : max;
+      }, 0) * 1000;
+
     if (this.samples.every((value) => value.isComplete)) {
       this.fire('ready');
     }

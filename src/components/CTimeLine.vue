@@ -19,6 +19,8 @@
     </template>
 
     <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
+
+    <div class="spacer"></div>
   </div>
 </template>
 
@@ -75,7 +77,9 @@ export default class CTimeLine extends Vue {
     state.on('handleStartedFinished', this.updateSourceHandle);
     state.on('handleMoved', this.updateSourceHandle);
 
-    state.on('playing', this.updateCursor);
+    state.on('playing', this.redraw);
+    state.on('seeked', this.redraw);
+    state.on('scrollToCursor', this.updateCursor);
 
     state.on('ppsChanged', this.redraw);
 
@@ -110,6 +114,7 @@ export default class CTimeLine extends Vue {
   }
 
   updateCursor() {
+    this.timelineElement.scrollLeft = (state.time / 1000) * state.pps;
     this.redrawCursor();
   }
 
@@ -172,7 +177,11 @@ export default class CTimeLine extends Vue {
     this.gridContext.beginPath();
 
     let step = 1;
-    if (state.pps < 20) {
+    if (state.pps < 2) {
+      step = 60;
+    } else if (state.pps < 10) {
+      step = 30;
+    } else if (state.pps < 20) {
       step = 15;
     } else if (state.pps < 45) {
       step = 5;
@@ -246,7 +255,8 @@ export default class CTimeLine extends Vue {
         continue;
       }
 
-      const height = 128 + 5;
+      const height = 128;
+      const spacing = 5;
 
       const samples: Sample[] = timeline.getSamples();
       samples.forEach((sample) => {
@@ -263,8 +273,14 @@ export default class CTimeLine extends Vue {
             return;
           }
 
-          this.cursorContext.moveTo(x - xOffset, height * i);
-          this.cursorContext.lineTo(x - xOffset, height * (i + 1));
+          this.cursorContext.moveTo(
+            x - xOffset,
+            (height + spacing) * i - yOffset
+          );
+          this.cursorContext.lineTo(
+            x - xOffset,
+            (height + spacing) * i + height - yOffset
+          );
         });
       });
     }
@@ -348,6 +364,10 @@ export default class CTimeLine extends Vue {
   .cursor-canvas {
     position: absolute;
     top: 0;
+  }
+
+  .spacer {
+    height: 100px;
   }
 }
 </style>
