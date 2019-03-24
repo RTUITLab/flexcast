@@ -24,6 +24,11 @@ export interface ISample {
   source: ISource;
   offset: number;
   duration: number;
+
+  fadeInOffset: number;
+  fadeInDuration: number;
+  fadeOutDuration: number;
+  fadeOutOffset: number;
 }
 
 export class Sample implements ISample {
@@ -31,6 +36,11 @@ export class Sample implements ISample {
   public source: ISource;
   public offset: number;
   public duration: number = 0;
+
+  public fadeInOffset: number = 0;
+  public fadeInDuration: number = 0;
+  public fadeOutDuration: number = 0;
+  public fadeOutOffset: number = 0;
 
   constructor(source: ISource, offset: number) {
     this.id = CURRENT_ID++;

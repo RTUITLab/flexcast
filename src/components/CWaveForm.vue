@@ -180,45 +180,75 @@ export default class CWaveForm extends Vue {
   }
 
   updateEffects() {
-    const sampleTime = state.time / 1000 - this.sample.offset;
+    const sampleTime = state.time / 1000;
+    if (sampleTime < this.sample.offset) {
+      return;
+    }
+
     const currentTime = this.wavesurfer.backend.ac.currentTime;
+
+    const fadeInOffset = this.sample.fadeInOffset;
+    const fadeInDuration = this.sample.fadeInDuration;
+    const fadeOutDuration = this.sample.fadeOutDuration;
+    const fadeOutOffset = this.sample.fadeOutOffset;
+
+    const sampleStart = this.sample.offset;
+    const fadeInStart = sampleStart + fadeInOffset;
+    const fadeInFinish = sampleStart + fadeInOffset + fadeInDuration;
+    const fadeOutStart =
+      sampleStart + this.sample.duration - fadeOutDuration - fadeOutOffset;
+    const fadeOutFinish = sampleStart + this.sample.duration - fadeOutOffset;
+
+    const toContextTime = (time: number) => time - sampleTime + currentTime;
 
     const node = this.wavesurfer.backend.ac.createGain();
 
-    const fadeInDuration = 10;
-
-    if (sampleTime <= fadeInDuration) {
-      const values = this.generateExponentialIn(0, sampleTime, fadeInDuration);
-
-      if (values.length > 0) {
-        node.gain.setValueAtTime(values[0], currentTime);
-        node.gain.setValueCurveAtTime(
-          values,
-          currentTime,
-          fadeInDuration - sampleTime
-        );
-      }
+    if (sampleTime < fadeInStart && fadeInOffset > 0) {
+      node.gain.setValueAtTime(0, toContextTime(sampleTime));
     }
+    if (sampleTime < fadeInFinish && fadeInDuration > 0) {
+      const start = Math.max(fadeInStart, sampleTime);
 
-    const fadeOutDuration = 10;
-
-    const fadeOutStart = this.sample.duration - fadeOutDuration;
-    const elapsed = this.sample.duration - sampleTime;
-
-    if (sampleTime < fadeOutStart) {
-      node.gain.setValueAtTime(1.0, currentTime + elapsed);
-    }
-    if (sampleTime >= fadeOutStart && sampleTime < this.sample.duration) {
-      const values = this.generateExponentialOut(
-        fadeOutStart,
-        sampleTime,
-        fadeOutDuration
+      const values = this.generateExponentialIn(
+        fadeInStart,
+        start,
+        fadeInDuration
       );
 
       if (values.length > 0) {
-        node.gain.setValueAtTime(values[0], currentTime);
-        node.gain.setValueCurveAtTime(values, currentTime, elapsed);
+        node.gain.setValueCurveAtTime(
+          values,
+          toContextTime(start),
+          fadeInFinish - start
+        );
       }
+    }
+    if (sampleTime < fadeOutStart) {
+      const start = Math.max(fadeOutStart, sampleTime);
+      node.gain.setValueAtTime(1.0, toContextTime(start));
+    }
+    if (sampleTime < fadeOutFinish && fadeOutDuration > 0) {
+      const start = Math.max(fadeOutStart, sampleTime);
+
+      const values = this.generateExponentialOut(
+        fadeOutStart,
+        start,
+        fadeOutDuration
+      );
+
+      if (values.length > 0 && start > fadeOutStart) {
+        node.gain.setValueAtTime(values[0], toContextTime(start));
+      }
+
+      node.gain.setValueCurveAtTime(
+        values,
+        toContextTime(start),
+        fadeOutFinish - start
+      );
+    }
+    if (sampleTime < sampleStart + this.sample.duration && fadeOutOffset > 0) {
+      const start = sampleStart + this.sample.duration;
+      node.gain.setValueAtTime(0, toContextTime(start));
     }
 
     this.wavesurfer.backend.setFilter(node);
