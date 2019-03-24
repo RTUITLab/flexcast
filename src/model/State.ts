@@ -73,7 +73,6 @@ export class State {
 
   public async addSource(url: string) {
     var raw = await axios.get(url, { responseType: 'blob' });
-    console.log(raw.data);
 
     var arrayBuffer: ArrayBuffer;
     var fileReader = new FileReader();

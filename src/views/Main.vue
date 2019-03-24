@@ -38,7 +38,7 @@ export default class Home extends Vue {
 
   mounted() {
     state.addSource('https://files.rtuitlab.ru/green-light.mp3');
-    state.addSource('https://files.rtuitlab.ru/subaru.mp3');
+    state.addSource('https://files.rtuitlab.ru/mind.mp3');
     state.addSource('https://files.rtuitlab.ru/veerus.mp3');
   }
 
