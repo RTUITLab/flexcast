@@ -1,39 +1,14 @@
-import { Sample, ISource, ISourceHandle } from '@/model/Sample';
-import { IWindowSlice } from '@/model/WindowSlice';
 import axios from 'axios';
-import { SampleMerger } from './SampleMerger';
+
 import { InstrumentType } from './Instrument';
+import { SampleMerger } from './SampleMerger';
+import { Rectangle } from './Rectangle';
+import { Sample } from './Sample';
 import { Beats } from './Beats';
 
-type StateEvent =
-  | 'sourcesChanged'
-  | 'ready'
-  | 'samplesChanged'
-  | 'ppsChanged'
-  | 'volumeChanged'
-  | 'windowSliceChanged'
-  | 'playPause'
-  | 'playing'
-  | 'seeked'
-  | 'handleStartedFinished'
-  | 'handleMoved'
-  | 'scrollToCursor'
-  | 'instrumentChanged';
-
-type StateEventHandler = () => void;
+import bus from './Bus';
 
 export class State {
-  private _context = new AudioContext();
-
-  private _sources: ISource[] = [];
-
-  private _windowSlice: IWindowSlice = {
-    offsetLeft: 0,
-    offsetTop: 0,
-    width: 0,
-    height: 0
-  };
-
   private _isPlaying: boolean = false;
 
   private _pps: number = 50;
@@ -41,98 +16,9 @@ export class State {
 
   private _time: number = 0;
   private _lastTimestamp: number = -1;
-  private _maxTime: number = 0;
-
-  private _listeners: Map<StateEvent, StateEventHandler[]> = new Map();
-
-  private _samples: Sample[] = [];
-
-  private _sourceHandle: ISourceHandle | null = null;
 
   private _instrument: InstrumentType | null = null;
 
-  public updateSample(sample: Sample) {
-    const index = this.samples.findIndex((value) => value.id === sample.id);
-
-    if (index < 0) {
-      return;
-    }
-
-    this.samples[index] = sample;
-    this.fire('samplesChanged');
-    this.checkComplete();
-  }
-
-  public on(event: StateEvent, handler: StateEventHandler) {
-    const listeners = this._listeners.get(event);
-    this._listeners.set(event, (listeners || []).concat(handler));
-  }
-
-  public off(event: StateEvent, handler: StateEventHandler) {
-    const listeners = this._listeners.get(event);
-
-    if (listeners == null) {
-      return;
-    }
-
-    this._listeners.set(event, listeners.filter((v) => v !== handler));
-  }
-
-  public async addSource(url: string) {
-    const raw = await axios.get(url, { responseType: 'blob' });
-
-    let arrayBuffer: ArrayBuffer;
-    const fileReader = new FileReader();
-    fileReader.onload = (event) => {
-      arrayBuffer = (event.target as any).result;
-      this._context.decodeAudioData(arrayBuffer).then((decoded) => {
-        this._sources.push({
-          url,
-          data: decoded,
-          state: 'analyzing'
-        });
-
-        this.fire('sourcesChanged');
-      });
-    };
-    fileReader.readAsArrayBuffer(raw.data);
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([raw.data], { type: 'application/octet-stream' })
-    );
-
-    var beats = await axios.post<Beats>(
-      'http://10.100.110.131:5000/api/naudio?offset=2',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-    this.updateBeats(url, beats.data);
-  }
-
-  public updateBeats(sourceUrl: string, beats: Beats) {
-    const index = this._sources.findIndex((s) => s.url === sourceUrl);
-    if (index < 0) {
-      return;
-    }
-
-    this._sources[index].beats = beats;
-    this._sources[index].state = 'complete';
-    this.fire('sourcesChanged');
-  }
-
-  public get sources() {
-    return this._sources;
-  }
-
-  public set windowSlice(windowSlice: IWindowSlice) {
-    this._windowSlice = windowSlice;
-    this.fire('windowSliceChanged');
-  }
 
   public get windowSlice() {
     return this._windowSlice;
@@ -140,7 +26,7 @@ export class State {
 
   public set isPlaying(playing: boolean) {
     this._isPlaying = playing;
-    this.fire('playPause');
+    bus.fire('playPause');
 
     this._lastTimestamp = -1;
     const callback = (timestamp: number) => {
@@ -149,7 +35,7 @@ export class State {
       }
       this._time += timestamp - this._lastTimestamp;
 
-      this.fire('playing');
+      bus.fire('playing');
 
       this._lastTimestamp = timestamp;
 
@@ -175,7 +61,7 @@ export class State {
 
   public set pps(pps: number) {
     this._pps = pps;
-    this.fire('ppsChanged');
+    bus.fire('ppsChanged');
   }
 
   public get pps() {
@@ -184,7 +70,7 @@ export class State {
 
   public set volume(volume: number) {
     this._volume = volume;
-    this.fire('volumeChanged');
+    bus.fire('volumeChanged');
   }
 
   public get volume() {
@@ -193,87 +79,24 @@ export class State {
 
   public set time(time: number) {
     this._time = time;
-    this.fire('seeked');
+    bus.fire('seeked');
   }
 
   public get time() {
     return this._time;
   }
 
-  public addSample(sample: Sample) {
-    this._samples.push(sample);
-    this.fire('samplesChanged');
-    this.checkComplete();
-  }
-
-  public set samples(samples: Sample[]) {
-    this._samples = samples;
-    this.fire('samplesChanged');
-    this.checkComplete();
-  }
-
-  public get samples() {
-    return this._samples;
-  }
-
-  public mergeSamples() {
-    SampleMerger.MergeSamples(this._samples);
-    this.fire('samplesChanged');
-    this.checkComplete();
-  }
-
-  public setHandle(handle: ISourceHandle | null) {
-    this._sourceHandle = handle;
-    this.fire('handleStartedFinished');
-  }
-
-  public updateHandle(handle: ISourceHandle) {
-    this._sourceHandle = handle;
-    this.fire('handleMoved');
-  }
-
-  public get sourceHandle() {
-    return this._sourceHandle;
-  }
-
   public scrollToCursor() {
-    this.fire('scrollToCursor');
-  }
-
-  public get maxTime() {
-    return this._maxTime;
+    bus.fire('scrollToCursor');
   }
 
   public set instrument(instrument: InstrumentType | null) {
     this._instrument = instrument;
-    this.fire('instrumentChanged');
+    bus.fire('instrumentChanged');
   }
 
   public get instrument() {
     return this._instrument;
-  }
-
-  public get audioContext() {
-    return this._context;
-  }
-
-  private checkComplete() {
-    this._maxTime =
-      state.samples.reduce((max, c) => {
-        const end = c.offset + c.duration;
-        return end > max ? end : max;
-      }, 0) * 1000;
-
-    if (this.samples.every((value) => value.isComplete)) {
-      this.fire('ready');
-    }
-  }
-
-  private fire(event: StateEvent) {
-    const listeners = this._listeners.get(event);
-    if (listeners) {
-      listeners.forEach((v) => v());
-    }
   }
 }
 
