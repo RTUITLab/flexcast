@@ -1,13 +1,13 @@
 <template>
-  <div class="c-timeline-row">
-    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample"/>
+  <div class='c-timeline-row'>
+    <c-waveform :sample='sample'/>
 
-    <template v-for="item in visibleItems">
+    <template v-for='item in visibleItems'>
       <div
-        class="item noselect"
-        :style="generateStyle(item)"
-        :key="`item-${item.sample.id}`"
-      >{{item.sample.source.url}}</div>
+        class='item noselect'
+        :style='generateStyle(item)'
+        :key='`item-${item.sample.id}`'
+      >{{item.sample.source.name}}</div>
     </template>
   </div>
 </template>
@@ -16,14 +16,12 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import CWaveForm from '@/components/CWaveForm.vue';
 
-import { Sample, ISample } from '@/model/Sample';
-import { IWindowSlice, contains } from '@/model/WindowSlice';
-import state from '@/model/State';
+import { Rectangle } from '@/model/stuff/Rectangle';
+import { Sample } from '@/model/stuff/Sample';
 
 interface IVisibleItem {
   sample: Sample;
-  left: number;
-  width: number;
+  rectangle: Rectangle;
 }
 
 @Component({
@@ -32,48 +30,49 @@ interface IVisibleItem {
   }
 })
 export default class CTimeLineRow extends Vue {
-  @Prop({
-    type: Array,
-    default: []
-  })
-  public samples!: Sample[];
+  @Prop()
+  public sample!: Sample;
 
   private visibleItems: IVisibleItem[] = [];
 
-  public updateVisibleItems(windowSlice: IWindowSlice) {
+  public updateVisibleItems(windowRectangle: Rectangle) {
     let result: IVisibleItem[] = [];
 
-    this.samples.forEach((sample) => {
-      if (!sample.isComplete) {
-        return;
-      }
+    if (!this.sample.isComplete) {
+      return;
+    }
 
-      const left = sample.offset * state.pps;
-      const width = sample.duration * state.pps;
+    const left = this.sample.offset * this.$state.timelineManager.pps;
+    const width = this.sample.duration * this.$state.timelineManager.pps;
 
-      const area = contains(windowSlice, left, width);
+    const intersection = windowRectangle.findHorizontalIntersection(
+      new Rectangle({
+        offsetLeft: left,
+        offsetTop: 0,
+        width,
+        height: 128
+      })
+    );
 
-      if (area) {
-        result.push({
-          sample: sample,
-          left: area.left,
-          width: area.width
-        });
-      }
-    });
+    if (intersection) {
+      result.push({
+        sample: this.sample,
+        rectangle: intersection
+      });
+    }
 
     this.visibleItems = result;
   }
 
   generateStyle(item: IVisibleItem) {
     return {
-      left: `${item.left}px`,
-      width: `${item.width}px`
+      left: `${item.rectangle.offsetLeft}px`,
+      width: `${item.rectangle.width}px`
     };
   }
 
   public getSamples() {
-    return this.samples;
+    return [this.sample];
   }
 }
 </script>

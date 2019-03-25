@@ -1,7 +1,7 @@
-import { SampleMerger } from './SampleMerger';
-import { Sample } from './Sample';
+import { Sample } from '@/model/stuff/Sample';
+import bus from '@/model/Bus';
 
-import bus from './Bus';
+import { SampleMerger } from '@/model/algorithms/SampleMerger';
 
 export class SampleManager {
   private _samples: Sample[] = [];
@@ -53,11 +53,10 @@ export class SampleManager {
   }
 
   private updateTime() {
-    this._maxTime =
-      this._samples.reduce((max, c) => {
-        const end = c.offset + c.duration;
-        return end > max ? end : max;
-      }, 0) * 1000;
+    this._maxTime = this._samples.reduce((max, c) => {
+      const end = c.offset + c.duration;
+      return end > max ? end : max;
+    }, 0);
   }
 
   public get maxTime() {

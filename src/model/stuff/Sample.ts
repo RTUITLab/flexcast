@@ -1,10 +1,10 @@
-import { ISource } from './Source';
+import { Source } from './Source';
 
 let CURRENT_ID = 0;
 
 export class Sample {
   public id: number;
-  public source: ISource;
+  public source: Source;
   public offset: number = 0;
   public duration: number = 0;
 
@@ -13,7 +13,7 @@ export class Sample {
   public fadeOutDuration: number = 0;
   public fadeOutOffset: number = 0;
 
-  constructor(source: ISource) {
+  constructor(source: Source) {
     this.id = CURRENT_ID++;
     this.source = source;
   }

@@ -1,5 +1,5 @@
-import { Beats } from './Beats';
-import { Sample } from './Sample';
+import { Beats } from '@/model/stuff/Beats';
+import { Sample } from '@/model/stuff/Sample';
 
 export class SampleMerger {
   public static mergeSamples(samples: Sample[], matchLevel: number = 5) {

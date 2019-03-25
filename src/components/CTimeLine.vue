@@ -1,26 +1,22 @@
 <template>
-  <div class="c-timeline" ref="timeline" @scroll="redraw">
-    <canvas class="grid-canvas" ref="grid-canvas"></canvas>
+  <div class='c-timeline' ref='timeline' @scroll='redraw'>
+    <canvas class='grid-canvas' ref='grid-canvas'></canvas>
 
     <c-timeline-row
-      v-for="(samples, index) in timelines"
-      :key="`timeline-${index}`"
-      :samples="samples"
-      :ref="`timeline-${index}`"
-      @needsRedraw="redraw"
+      v-for='(sample, index) in samples'
+      :key='`timeline-${index}`'
+      :ref='`timeline-${index}`'
+      :sample='sample'
+      @needsRedraw='redraw'
     />
 
-    <template v-if="sourceHandle">
-      <c-timeline-row
-        :samples="newSample ? [newSample] : []"
-        :ref="`timeline-new`"
-        @needsRedraw="redraw"
-      />
+    <template v-if='sourceHandle'>
+      <c-timeline-row :sample='newSample' :ref='`timeline-new`' @needsRedraw='redraw'/>
     </template>
 
-    <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
+    <canvas class='cursor-canvas' ref='cursor-canvas'></canvas>
 
-    <div class="spacer"></div>
+    <div class='spacer'></div>
   </div>
 </template>
 
@@ -28,9 +24,10 @@
 import { Component, Watch, Prop, Vue } from 'vue-property-decorator';
 import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
-import { IWindowSlice } from '@/model/WindowSlice';
-import { Sample, ISource, ISourceHandle } from '@/model/Sample';
-import state from '@/model/State';
+import { SourceHandle } from '@/model/managers/SourceManager';
+import { Sample } from '@/model/stuff/Sample';
+import { TimeLineManager } from '@/model/managers/TimeLineManager';
+import { Rectangle } from '@/model/stuff/Rectangle';
 
 @Component({
   components: {
@@ -38,27 +35,30 @@ import state from '@/model/State';
   }
 })
 export default class CTimeLine extends Vue {
+  private timelineManager!: TimeLineManager;
+
   private timelineElement!: HTMLElement;
-  private cursorElement!: HTMLElement;
+
   private gridElement!: HTMLElement;
   private gridContext!: CanvasRenderingContext2D;
+
+  private cursorElement!: HTMLElement;
   private cursorContext!: CanvasRenderingContext2D;
 
-  private sourceHandle: ISourceHandle | null = null;
+  private samples: Sample[] = [];
   private newSample: Sample | null = null;
 
-  @Prop({
-    type: Array,
-    default: []
-  })
-  public timelines!: Sample[][];
+  private sourceHandle: SourceHandle | null = null;
 
   mounted() {
-    this.timelineElement = this.$refs['timeline'] as HTMLElement;
-    this.cursorElement = this.$refs['cursor-canvas'] as HTMLElement;
-    this.gridElement = this.$refs['grid-canvas'] as HTMLElement;
+    this.timelineManager = this.$state.timelineManager;
 
+    this.timelineElement = this.$refs['timeline'] as HTMLElement;
+
+    this.gridElement = this.$refs['grid-canvas'] as HTMLElement;
     this.gridContext = (this.gridElement as any).getContext('2d');
+
+    this.cursorElement = this.$refs['cursor-canvas'] as HTMLElement;
     this.cursorContext = (this.cursorElement as any).getContext('2d');
 
     this.timelineElement.addEventListener(
@@ -74,27 +74,33 @@ export default class CTimeLine extends Vue {
 
     this.timelineElement.addEventListener('click', this.moveCursor);
 
-    state.on('handleStartedFinished', this.updateSourceHandle);
-    state.on('handleMoved', this.updateSourceHandle);
+    this.$bus.on('samplesChanged', this.updateSamples);
 
-    state.on('playing', this.redraw);
-    state.on('seeked', this.redraw);
-    state.on('scrollToCursor', this.updateCursor);
+    this.$bus.on('handleStarted', this.updateSourceHandle);
+    this.$bus.on('handleFinished', this.updateSourceHandle);
+    this.$bus.on('handleMoved', this.updateSourceHandle);
 
-    state.on('ppsChanged', this.redraw);
+    this.$bus.on('playing', this.redraw);
+    this.$bus.on('seeked', this.redraw);
+    this.$bus.on('scrollToCursor', this.updateCursor);
 
-    state.on('ready', this.redraw);
-    this.redraw();
+    this.$bus.on('ppsChanged', this.redraw);
 
     window.addEventListener('resize', this.redraw);
+
+    this.redraw();
+  }
+
+  updateSamples() {
+    this.samples = this.$state.sampleManager.samples;
   }
 
   updateSourceHandle() {
-    this.sourceHandle = state.sourceHandle;
+    this.sourceHandle = this.$state.sourceManager.sourceHandle;
 
     if (this.sourceHandle == null) {
       if (this.newSample) {
-        state.addSample(this.newSample);
+        this.$state.sampleManager.addSample(this.newSample);
       }
 
       this.newSample = null;
@@ -103,18 +109,20 @@ export default class CTimeLine extends Vue {
 
     const xOffset = this.timelineElement.scrollLeft;
     const x = this.sourceHandle.pageX - this.timelineElement.offsetLeft;
-    const offset = Math.max(0, (xOffset + x) / state.pps);
+    const offset = Math.max(0, (xOffset + x) / this.timelineManager.pps);
 
     if (this.newSample == null) {
       const source = this.sourceHandle.source;
-      this.newSample = new Sample(source, offset);
-    } else {
-      this.newSample.offset = offset;
+      this.newSample = new Sample(source);
     }
+
+    this.newSample.offset = offset;
+    this.redraw();
   }
 
   updateCursor() {
-    this.timelineElement.scrollLeft = (state.time / 1000) * state.pps;
+    this.timelineElement.scrollLeft =
+      this.timelineManager.time * this.timelineManager.pps;
     this.redrawCursor();
   }
 
@@ -135,9 +143,9 @@ export default class CTimeLine extends Vue {
     }
 
     const x = e.pageX - this.timelineElement.offsetLeft;
-
     const pixels = this.timelineElement.scrollLeft + x;
-    state.time = (pixels / state.pps) * 1000;
+
+    this.timelineManager.time = pixels / this.timelineManager.pps;
 
     this.redrawCursor();
   }
@@ -149,9 +157,9 @@ export default class CTimeLine extends Vue {
     const width = this.timelineElement.clientWidth;
     const height = this.timelineElement.clientHeight;
 
-    for (let i = 0; i <= this.timelines.length; ++i) {
+    for (let i = 0; i <= this.samples.length; ++i) {
       const timeline =
-        i < this.timelines.length
+        i < this.samples.length
           ? (this.$refs[`timeline-${i}`] as any)[0]
           : (this.$refs[`timeline-new`] as any);
 
@@ -159,12 +167,14 @@ export default class CTimeLine extends Vue {
         continue;
       }
 
-      timeline.updateVisibleItems({
-        offsetLeft: xOffset,
-        offsetTop: yOffset,
-        width,
-        height
-      });
+      timeline.updateVisibleItems(
+        new Rectangle({
+          offsetLeft: xOffset,
+          offsetTop: yOffset,
+          width,
+          height
+        })
+      );
     }
 
     (this.gridElement as any).width = width;
@@ -177,17 +187,18 @@ export default class CTimeLine extends Vue {
     this.gridContext.beginPath();
 
     let step = 1;
-    if (state.pps < 2) {
+    const pps = this.timelineManager.pps;
+    if (pps < 2) {
       step = 60;
-    } else if (state.pps < 10) {
+    } else if (pps < 10) {
       step = 30;
-    } else if (state.pps < 20) {
+    } else if (pps < 20) {
       step = 15;
-    } else if (state.pps < 45) {
+    } else if (pps < 45) {
       step = 5;
     }
 
-    const pixelStep = state.pps * step;
+    const pixelStep = pps * step;
 
     let elapsedSteps = Math.ceil(xOffset / pixelStep);
 
@@ -235,7 +246,7 @@ export default class CTimeLine extends Vue {
 
     this.cursorContext.beginPath();
 
-    const timePixels = (state.time * state.pps) / 1000;
+    const timePixels = this.timelineManager.time * this.timelineManager.pps;
     this.cursorContext.strokeStyle = '#dd282D';
 
     const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
@@ -245,9 +256,9 @@ export default class CTimeLine extends Vue {
       this.cursorContext.lineTo(timePixels - xOffset, height);
     }
 
-    for (let i = 0; i <= this.timelines.length; ++i) {
+    for (let i = 0; i <= this.samples.length; ++i) {
       const timeline =
-        i < this.timelines.length
+        i < this.samples.length
           ? (this.$refs[`timeline-${i}`] as any)[0]
           : (this.$refs[`timeline-new`] as any);
 
@@ -267,7 +278,7 @@ export default class CTimeLine extends Vue {
         const beats = sample.source.beats;
 
         beats.head.concat(beats.tail).forEach((beat) => {
-          const x = (beat + sample.offset) * state.pps;
+          const x = (beat + sample.offset) * this.timelineManager.pps;
 
           if (!checkInRange(x)) {
             return;

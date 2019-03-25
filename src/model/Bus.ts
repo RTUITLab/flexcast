@@ -15,7 +15,7 @@ type BusEvent =
 
 type BusEventHandler = () => void;
 
-class Bus {
+export class Bus {
   private _listeners: Map<BusEvent, BusEventHandler[]> = new Map();
 
   public on(event: BusEvent, handler: BusEventHandler) {

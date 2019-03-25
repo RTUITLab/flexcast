@@ -1,22 +1,32 @@
 import axios from 'axios';
 
 import { ContextManager } from './ContextManager';
-import { Source } from './Source';
-import { Beats } from './Beats';
+import { Source } from '@/model/stuff/Source';
+import { Beats } from '@/model/stuff/Beats';
 
-import bus from './Bus';
+import bus from '@/model/Bus';
 
-export interface ISourceHandle {
-  source: Source;
-  pageX: number;
-  pageY: number;
+export class SourceHandle {
+  public pageX: number;
+  public pageY: number;
+  private _source: Source;
+
+  constructor(source: Source, x: number, y: number) {
+    this.pageX = x;
+    this.pageY = y;
+    this._source = source;
+  }
+
+  public get source() {
+    return this._source;
+  }
 }
 
 export class SourceManager {
   private _contextManager: ContextManager;
 
   private _sources: Source[] = [];
-  private _sourceHandle: ISourceHandle | null = null;
+  private _sourceHandle: SourceHandle | null = null;
 
   constructor(contextManager: ContextManager) {
     this._contextManager = contextManager;
@@ -44,6 +54,7 @@ export class SourceManager {
       new Blob([raw.data], { type: 'application/octet-stream' })
     );
 
+    //TODO: move config to .env file
     const beats = await axios.post<Beats>(
       'http://10.11.162.235:5000/api/naudio?offset=2',
       formData,
@@ -54,7 +65,7 @@ export class SourceManager {
       }
     );
 
-    //this.updateBeats(url, beats.data);
+    this.updateBeats(url, beats.data);
   }
 
   public updateBeats(name: string, beats: Beats) {
@@ -71,7 +82,7 @@ export class SourceManager {
     return this._sources;
   }
 
-  public startHandle(handle: ISourceHandle) {
+  public startHandle(handle: SourceHandle) {
     this._sourceHandle = handle;
     bus.fire('handleStarted');
   }
