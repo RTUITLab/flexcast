@@ -93,6 +93,9 @@ export default class CTimeLine extends Vue {
 
   updateSamples() {
     this.samples = this.$state.sampleManager.samples;
+    this.$nextTick(() => {
+      this.redraw();
+    })
   }
 
   updateSourceHandle() {

@@ -73,7 +73,7 @@ export class TimeLineManager {
   }
 
   public set time(time: number) {
-    this._time = Math.min(time * 1000, this._sampleManager.maxTime);
+    this._time = Math.min(time * 1000, this._sampleManager.maxTime * 1000);
     bus.fire('seeked');
   }
 

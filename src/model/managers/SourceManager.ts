@@ -35,46 +35,18 @@ export class SourceManager {
   public async addSource(url: string) {
     const raw = await axios.get(url, { responseType: 'blob' });
 
-    let arrayBuffer: ArrayBuffer;
-    const fileReader = new FileReader();
-    fileReader.onload = (event) => {
-      arrayBuffer = (event.target as any).result;
-      this._contextManager.context
-        .decodeAudioData(arrayBuffer)
-        .then((decoded) => {
-          this._sources.push(new Source(url, decoded));
+    const audioBuffer = await this.loadAudioBuffer(raw.data);
+    const info = await this.processAudioBuffer(audioBuffer);
 
-          bus.fire('sourcesChanged');
-        });
-    };
-    fileReader.readAsArrayBuffer(raw.data);
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([raw.data], { type: 'application/octet-stream' })
+    const source = new Source(url, await this.loadAudioBuffer(raw.data));
+
+    const N = 10;
+    source.beats = new Beats(
+      info.slice(0, N),
+      info.slice(Math.max(info.length - N, 1))
     );
+    this._sources.push(source);
 
-    //TODO: move config to .env file
-    const beats = await axios.post<Beats>(
-      'http://10.11.162.235:5000/api/naudio?offset=2',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-
-    this.updateBeats(url, beats.data);
-  }
-
-  public updateBeats(name: string, beats: Beats) {
-    const index = this._sources.findIndex((s) => s.name === name);
-    if (index < 0) {
-      return;
-    }
-
-    this._sources[index].beats = beats;
     bus.fire('sourcesChanged');
   }
 
@@ -108,5 +80,69 @@ export class SourceManager {
 
   public get hasHandle() {
     return this._sourceHandle != null;
+  }
+
+  private async loadAudioBuffer(data: Blob) {
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const fileReader = new FileReader();
+
+      fileReader.onload = (event) => {
+        resolve((event.target as any).result);
+      };
+
+      fileReader.readAsArrayBuffer(data);
+    });
+
+    return await this._contextManager.context.decodeAudioData(arrayBuffer);
+  }
+
+  private async processAudioBuffer(data: AudioBuffer) {
+    const options = {
+      numberOfChannels: data.numberOfChannels,
+      length: data.length,
+      sampleRate: data.sampleRate
+    } as OfflineAudioContextOptions;
+
+    const offlineContext = new OfflineAudioContext(options);
+
+    const source = offlineContext.createBufferSource();
+    source.buffer = data;
+
+    const LPF = offlineContext.createBiquadFilter();
+    LPF.type = 'lowpass';
+    source.connect(LPF);
+    LPF.connect(offlineContext.destination);
+    source.start(0);
+
+    const result = await offlineContext.startRendering();
+
+    const filteredData = result.getChannelData(0);
+    const threshold = this.calculateThreshold(filteredData);
+
+    const peaksArray: number[] = [];
+    const length = data.length;
+    for (let i = 0; i < length; ) {
+      if (filteredData[i] > threshold) {
+        peaksArray.push(i / data.sampleRate);
+        i += 10000;
+      }
+      i++;
+    }
+
+    return peaksArray;
+  }
+
+  private calculateThreshold(data: Float32Array) {
+    const { min, max } = data.reduce(
+      (minMax, v) => {
+        return {
+          min: Math.min(minMax.min, v),
+          max: Math.max(minMax.max, v)
+        };
+      },
+      { min: data[0], max: data[0] }
+    );
+
+    return min + (max - min) * 0.9;
   }
 }
