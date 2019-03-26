@@ -30,8 +30,10 @@ export default class Home extends Vue {
   created() {
     const testSources = [
       'https://files.rtuitlab.ru/green-light.mp3',
-      'https://files.rtuitlab.ru/mind.mp3',
-      'https://files.rtuitlab.ru/veerus.mp3'
+      'https://files.rtuitlab.ru/veerus.mp3',
+      'https://files.rtuitlab.ru/Bang.mp3',
+      'https://files.rtuitlab.ru/WantYou.mp3',
+      'https://files.rtuitlab.ru/wecallforlove.mp3'
     ];
 
     testSources.forEach((track) => {
@@ -48,15 +50,14 @@ export default class Home extends Vue {
   flex-direction: row;
 
   .sidebar {
+    flex: 1;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    flex: 1;
     box-shadow: 2px 0px 2px 0px rgba(0, 0, 0, 0.66);
 
-    .sidebar-item {
-      &:last-child {
-        margin-top: auto;
-      }
+    .sidebar-item:first-child {
+      flex-grow: 1;
     }
   }
 

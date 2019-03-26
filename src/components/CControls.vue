@@ -19,12 +19,12 @@
         <img src='icons/backward.svg'>
       </div>
       <div class='button play noselect' @click='togglePlay'>
-        <span v-if='isPlaying'>
+        <template v-if='isPlaying'>
           <img src='icons/pause.svg'>
-        </span>
-        <span v-else>
+        </template>
+        <template v-else>
           <img src='icons/play.svg'>
-        </span>
+        </template>
       </div>
       <div class='button noselect' @click='buttonForward'>
         <img src='icons/forward.svg'>
@@ -49,18 +49,18 @@
         >
       </div>
       <div class='button noselect'>
-        <img src='icons/volumemax.svg' height='25px'>
+        <img src='icons/volumemax.svg'>
       </div>
     </div>
     <div class='row'>
       <div class='button noselect'>
-        <img src='icons/lowscale.svg' height='20px'>
+        <img src='icons/lowscale.svg'>
       </div>
       <div class='slidecontainer'>
         <input type='range' v-model='zoom' min='1' max='200' class='slider' @input='zoomChanged'>
       </div>
       <div class='button noselect'>
-        <img src='icons/highscale.svg' height='20px'>
+        <img src='icons/highscale.svg'>
       </div>
     </div>
   </div>
@@ -182,20 +182,16 @@ export default class CControls extends Vue {
 </script>
 
 <style lang="scss">
+$controls-height: 30px;
+
 .c-controls {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   background-color: #03282d;
-  justify-items: center;
 
   .row {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    justify-items: center;
-    padding-left: 10px;
-    padding-right: 10px;
+    align-items: center;
 
     &.instruments {
       background-color: #021d20;
@@ -212,11 +208,33 @@ export default class CControls extends Vue {
     }
   }
 
+  .button {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: $controls-height;
+    padding: 5px;
+
+    img {
+      width: auto;
+      min-height: 100%;
+    }
+
+    &.play {
+      height: 50px;
+    }
+
+    &:hover,
+    &.active {
+      cursor: pointer;
+    }
+  }
+
   .slidecontainer {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 40px;
     margin: 0px 5px;
 
     .slider {
@@ -252,31 +270,6 @@ export default class CControls extends Vue {
         border: 2px solid rgba(100, 180, 186, 0.85);
         cursor: pointer;
       }
-    }
-  }
-
-  .button {
-    color: #232532;
-    text-align: center;
-    margin: 5px;
-
-    &:hover,
-    &.active {
-      cursor: pointer;
-    }
-
-    &.play {
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      line-height: 50px;
-      font-size: 20pt;
-    }
-
-    &:not(.play) {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
     }
   }
 }

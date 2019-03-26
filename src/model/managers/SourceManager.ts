@@ -32,15 +32,24 @@ export class SourceManager {
     this._contextManager = contextManager;
   }
 
-  public async addSource(url: string) {
-    const raw = await axios.get(url, { responseType: 'blob' });
+  public async addSource(inputSource: string | File) {
+    let raw: Blob;
+    let name: string;
 
-    const audioBuffer = await this.loadAudioBuffer(raw.data);
+    if (typeof inputSource === 'string') {
+      raw = (await axios.get(inputSource, { responseType: 'blob' })).data;
+      name = inputSource;
+    } else {
+      raw = inputSource;
+      name = inputSource.name;
+    }
+
+    const audioBuffer = await this.loadAudioBuffer(raw);
     const info = await this.processAudioBuffer(audioBuffer);
 
-    const source = new Source(url, await this.loadAudioBuffer(raw.data));
+    const source = new Source(name, await this.loadAudioBuffer(raw));
 
-    const N = 10;
+    const N = 20;
     source.beats = new Beats(
       info.slice(0, N),
       info.slice(Math.max(info.length - N, 1))
@@ -143,6 +152,6 @@ export class SourceManager {
       { min: data[0], max: data[0] }
     );
 
-    return min + (max - min) * 0.9;
+    return min + (max - min) * 0.8;
   }
 }

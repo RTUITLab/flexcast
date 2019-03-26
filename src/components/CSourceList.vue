@@ -1,5 +1,7 @@
 <template>
   <div class='c-samplelist'>
+    <div class='drop-zone noselect' :class='{hovered:dragZoneHovered}' ref='drop-zone'>*.mp3</div>
+
     <div
       v-for='(source, index) in sources'
       :key='`source-${index}`'
@@ -20,6 +22,8 @@ import state from '@/model/State';
 
 @Component
 export default class CSourceList extends Vue {
+  private dragZoneHovered: boolean = false;
+
   private handle: SourceHandle | null = null;
   private sources: Source[] = [];
 
@@ -38,6 +42,43 @@ export default class CSourceList extends Vue {
       }
 
       this.$state.sourceManager.moveHandle(e.pageX, e.pageY);
+    });
+  }
+
+  mounted() {
+    const dropZone = this.$refs['drop-zone'] as HTMLElement;
+    dropZone.addEventListener('drop', (event: any) => {
+      event.preventDefault();
+
+      const files: File[] = [];
+
+      if (event.dataTransfer.items) {
+        for (var i = 0; i < event.dataTransfer.items.length; i++) {
+          if (event.dataTransfer.items[i].kind === 'file') {
+            files.push(event.dataTransfer.items[i].getAsFile()!);
+          }
+        }
+      } else {
+        for (var i = 0; i < event.dataTransfer.files.length; i++) {
+          files.push(event.dataTransfer.files[i]);
+        }
+      }
+
+      files.forEach((file) => this.$state.sourceManager.addSource(file));
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        this.dragZoneHovered = true;
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        this.dragZoneHovered = false;
+      });
     });
   }
 
@@ -70,8 +111,8 @@ export default class CSourceList extends Vue {
   flex-direction: column;
   justify-content: flex-start;
   background-color: #003840;
-  height: 100%;
   opacity: 1;
+  overflow-y: auto;
 
   .item {
     margin: 4px;
@@ -86,6 +127,18 @@ export default class CSourceList extends Vue {
     &.analyzing {
       opacity: 0.1;
       cursor: default;
+    }
+  }
+
+  .drop-zone {
+    margin: 10px;
+    padding: 10px;
+    font-size: 20pt;
+    text-align: center;
+    border: 4px dashed #03282d;
+
+    &.hovered {
+      border: 4px dashed #139aac;
     }
   }
 }
