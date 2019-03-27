@@ -74,8 +74,11 @@ export default class CWaveForm extends Vue {
   }
 
   beforeDestroy() {
+    console.log('destroy');
+
     this.$bus.off('ppsChanged', this.updateZoom);
     this.$bus.off('volumeChanged', this.updateVolume);
+    this.$bus.off('samplesChanged', this.handleSeek);
     this.$bus.off('playing', this.updatePlaying);
     this.$bus.off('playPause', this.updatePlaying);
     this.$bus.off('seeked', this.handleSeek);

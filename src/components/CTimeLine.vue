@@ -6,7 +6,7 @@
 
     <c-timeline-row
       v-for="(sample, index) in samples"
-      :key="`timeline-${index}`"
+      :key="`timeline-${sample.id}-${index}`"
       :ref="`timeline-${index}`"
       :sample="sample"
       @needsRedraw="redraw"
@@ -372,7 +372,11 @@ export default class CTimeLine extends Vue {
           );
         }
 
-        if (fadeInEnd > xOffset && fadeInStart < xOffset + width && sample.fadeInDuration > 0) {
+        if (
+          fadeInEnd > xOffset &&
+          fadeInStart < xOffset + width &&
+          sample.fadeInDuration > 0
+        ) {
           const values = Transition.generateExponentialIn(
             sample.fadeInOffset,
             0,
@@ -400,7 +404,11 @@ export default class CTimeLine extends Vue {
           }
         }
 
-        if (fadeOutEnd > xOffset && fadeOutStart < xOffset + width && sample.fadeOutDuration > 0) {
+        if (
+          fadeOutEnd > xOffset &&
+          fadeOutStart < xOffset + width &&
+          sample.fadeOutDuration > 0
+        ) {
           const values = Transition.generateExponentialOut(
             sample.fadeOutOffset,
             0,

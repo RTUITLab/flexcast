@@ -83,6 +83,10 @@ export default class CSourceList extends Vue {
   }
 
   startHandle(e: any, source: Source) {
+    if (this.$state.instrumentManager.instrument !== 'mouse') {
+      return;
+    }
+
     this.$state.timelineManager.isPlaying = false;
 
     const handle = new SourceHandle(source, e.pageX, e.pageY);

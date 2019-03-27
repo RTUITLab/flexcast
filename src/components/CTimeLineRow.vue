@@ -9,6 +9,7 @@
         :class="getClass(item)"
         :key="`item-${item.sample.id}`"
         @mousedown="startMove(item)"
+        @click="removeItem(item)"
       >{{item.sample.source.name}}</div>
     </template>
   </div>
@@ -108,6 +109,14 @@ export default class CTimeLineRow extends Vue {
     this.visibleItems = result;
   }
 
+  removeItem(item: IVisibleItem) {
+    if (this.$state.instrumentManager.instrument !== 'remove') {
+      return;
+    }
+
+    this.$state.sampleManager.removeSample(item.sample);
+  }
+
   getStyle(item: IVisibleItem) {
     return {
       left: `${item.rectangle.offsetLeft}px`,
@@ -152,10 +161,10 @@ export default class CTimeLineRow extends Vue {
 
     &.instrument-move {
       cursor: ew-resize;
+    }
 
-      &:hover {
-        background: rgba(0, 0, 60, 0.2);
-      }
+    &:hover {
+      background: rgba(0, 0, 60, 0.2);
     }
   }
 }

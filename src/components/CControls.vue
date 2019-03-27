@@ -15,6 +15,13 @@
       >
         <img src="icons/arrows.svg">
       </div>
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('remove')"
+        @click="selectInstrument('remove')"
+      >
+        <img src="icons/eraser.svg">
+      </div>
       <div class="button noselect" @click="automerge">
         <img src="icons/blocks.svg">
       </div>
