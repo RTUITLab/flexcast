@@ -1,66 +1,74 @@
 <template>
-  <div class='c-controls'>
-    <div class='row instruments'>
-      <div class='button noselect'>
-        <img src='icons/cursor.svg'>
+  <div class="c-controls">
+    <div class="row instruments">
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('mouse')"
+        @click="selectInstrument('mouse')"
+      >
+        <img src="icons/cursor.svg">
       </div>
-      <div class='button noselect'>
-        <img src='icons/arrows.svg'>
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('move')"
+        @click="selectInstrument('move')"
+      >
+        <img src="icons/arrows.svg">
       </div>
-      <div class='button noselect' @click='automerge'>
-        <img src='icons/blocks.svg'>
+      <div class="button noselect" @click="automerge">
+        <img src="icons/blocks.svg">
       </div>
     </div>
-    <div class='row'>
-      <div class='button noselect' @click='buttonBegin'>
-        <img src='icons/begin.svg'>
+    <div class="row">
+      <div class="button noselect" @click="buttonBegin">
+        <img src="icons/begin.svg">
       </div>
-      <div class='button noselect' @click='buttonBackward'>
-        <img src='icons/backward.svg'>
+      <div class="button noselect" @click="buttonBackward">
+        <img src="icons/backward.svg">
       </div>
-      <div class='button play noselect' @click='togglePlay'>
-        <template v-if='isPlaying'>
-          <img src='icons/pause.svg'>
+      <div class="button play noselect" @click="togglePlay">
+        <template v-if="isPlaying">
+          <img src="icons/pause.svg">
         </template>
         <template v-else>
-          <img src='icons/play.svg'>
+          <img src="icons/play.svg">
         </template>
       </div>
-      <div class='button noselect' @click='buttonForward'>
-        <img src='icons/forward.svg'>
+      <div class="button noselect" @click="buttonForward">
+        <img src="icons/forward.svg">
       </div>
-      <div class='button noselect' @click='buttonEnd'>
-        <img src='icons/end.svg'>
+      <div class="button noselect" @click="buttonEnd">
+        <img src="icons/end.svg">
       </div>
     </div>
-    <div class='row'>
-      <div class='button noselect'>
-        <img src='icons/volumemin.svg' height='25px'>
+    <div class="row">
+      <div class="button noselect">
+        <img src="icons/volumemin.svg" height="25px">
       </div>
-      <div class='slidecontainer'>
+      <div class="slidecontainer">
         <input
-          type='range'
-          v-model='volume'
-          min='0'
-          max='100'
-          value='100'
-          class='slider'
-          @input='volumeChanged'
+          type="range"
+          v-model="volume"
+          min="0"
+          max="100"
+          value="20"
+          class="slider"
+          @input="volumeChanged"
         >
       </div>
-      <div class='button noselect'>
-        <img src='icons/volumemax.svg'>
+      <div class="button noselect">
+        <img src="icons/volumemax.svg">
       </div>
     </div>
-    <div class='row'>
-      <div class='button noselect'>
-        <img src='icons/lowscale.svg'>
+    <div class="row">
+      <div class="button noselect">
+        <img src="icons/lowscale.svg">
       </div>
-      <div class='slidecontainer'>
-        <input type='range' v-model='zoom' min='1' max='200' class='slider' @input='zoomChanged'>
+      <div class="slidecontainer">
+        <input type="range" v-model="zoom" min="1" max="200" class="slider" @input="zoomChanged">
       </div>
-      <div class='button noselect'>
-        <img src='icons/highscale.svg'>
+      <div class="button noselect">
+        <img src="icons/highscale.svg">
       </div>
     </div>
   </div>
@@ -72,20 +80,24 @@ import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
 
+import { InstrumentType } from '@/model/managers/InstrumentManager';
+
 @Component({
   components: {
     Icon
   }
 })
 export default class CControls extends Vue {
+  private instrument: InstrumentType = 'mouse';
   private isPlaying: boolean = false;
 
   private zoom: number = 20;
-  private volume: number = 100;
+  private volume: number = 20;
 
-  mounted() {
+  created() {
     this.$bus.on('playPause', this.updateState);
-    this.$bus.on('instrumentChanged', this.updateInstrument);
+    this.$bus.on('instrumentChanged', this.updateState);
+    this.updateState();
   }
 
   togglePlay() {
@@ -99,6 +111,7 @@ export default class CControls extends Vue {
 
   updateState() {
     this.isPlaying = this.$state.timelineManager.isPlaying;
+    this.instrument = this.$state.instrumentManager.instrument;
   }
 
   volumeChanged(value: Number) {
@@ -171,12 +184,19 @@ export default class CControls extends Vue {
     this.$state.timelineManager.scrollToCursor();
   }
 
-  updateInstrument() {
-    //this.instrument = state.instrument;
-  }
-
   automerge() {
     this.$state.sampleManager.mergeSamples();
+  }
+
+  selectInstrument(type: InstrumentType) {
+    this.$state.instrumentManager.instrument = type;
+    this.$forceUpdate();
+  }
+
+  getInstrumentClass(type: InstrumentType) {
+    return {
+      active: this.instrument === type
+    };
   }
 }
 </script>

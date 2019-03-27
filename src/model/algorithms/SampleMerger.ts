@@ -2,7 +2,7 @@ import { Beats } from '@/model/stuff/Beats';
 import { Sample } from '@/model/stuff/Sample';
 
 export class SampleMerger {
-  public static mergeSamples(samples: Sample[], matchLevel: number = 6) {
+  public static mergeSamples(samples: Sample[], matchLevel: number = 5) {
     if (samples.length < 2) {
       return;
     }

@@ -1,22 +1,22 @@
 <template>
-  <div class='c-timeline' ref='timeline' @scroll='redraw'>
-    <canvas class='grid-canvas' ref='grid-canvas'></canvas>
+  <div class="c-timeline" ref="timeline" @scroll="redraw">
+    <canvas class="grid-canvas" ref="grid-canvas"></canvas>
+    <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
+    <canvas class="transitions-canvas" ref="transitions-canvas"></canvas>
 
     <c-timeline-row
-      v-for='(sample, index) in samples'
-      :key='`timeline-${index}`'
-      :ref='`timeline-${index}`'
-      :sample='sample'
-      @needsRedraw='redraw'
+      v-for="(sample, index) in samples"
+      :key="`timeline-${index}`"
+      :ref="`timeline-${index}`"
+      :sample="sample"
+      @needsRedraw="redraw"
     />
 
-    <template v-if='sourceHandle'>
-      <c-timeline-row :sample='newSample' :ref='`timeline-new`' @needsRedraw='redraw'/>
+    <template v-if="sourceHandle">
+      <c-timeline-row :sample="newSample" :ref="`timeline-new`" @needsRedraw="redraw"/>
     </template>
 
-    <canvas class='cursor-canvas' ref='cursor-canvas'></canvas>
-
-    <div class='spacer'></div>
+    <div class="spacer"></div>
   </div>
 </template>
 
@@ -28,6 +28,7 @@ import { SourceHandle } from '@/model/managers/SourceManager';
 import { Sample } from '@/model/stuff/Sample';
 import { TimeLineManager } from '@/model/managers/TimeLineManager';
 import { Rectangle } from '@/model/stuff/Rectangle';
+import { Transition } from '@/model/algorithms/Transition';
 
 @Component({
   components: {
@@ -39,11 +40,14 @@ export default class CTimeLine extends Vue {
 
   private timelineElement!: HTMLElement;
 
-  private gridElement!: HTMLElement;
+  private gridElement!: HTMLCanvasElement;
   private gridContext!: CanvasRenderingContext2D;
 
-  private cursorElement!: HTMLElement;
+  private cursorElement!: HTMLCanvasElement;
   private cursorContext!: CanvasRenderingContext2D;
+
+  private transitionsElement!: HTMLCanvasElement;
+  private transitionsContext!: CanvasRenderingContext2D;
 
   private samples: Sample[] = [];
   private newSample: Sample | null = null;
@@ -55,11 +59,16 @@ export default class CTimeLine extends Vue {
 
     this.timelineElement = this.$refs['timeline'] as HTMLElement;
 
-    this.gridElement = this.$refs['grid-canvas'] as HTMLElement;
-    this.gridContext = (this.gridElement as any).getContext('2d');
+    this.gridElement = this.$refs['grid-canvas'] as HTMLCanvasElement;
+    this.gridContext = this.gridElement.getContext('2d')!;
 
-    this.cursorElement = this.$refs['cursor-canvas'] as HTMLElement;
-    this.cursorContext = (this.cursorElement as any).getContext('2d');
+    this.cursorElement = this.$refs['cursor-canvas'] as HTMLCanvasElement;
+    this.cursorContext = this.cursorElement.getContext('2d')!;
+
+    this.transitionsElement = this.$refs[
+      'transitions-canvas'
+    ] as HTMLCanvasElement;
+    this.transitionsContext = this.transitionsElement.getContext('2d')!;
 
     this.timelineElement.addEventListener(
       'mousewheel',
@@ -71,6 +80,8 @@ export default class CTimeLine extends Vue {
       this.scrollHorizontally,
       false
     );
+
+    window.addEventListener('keypress', this.togglePlay);
 
     this.timelineElement.addEventListener('click', this.moveCursor);
 
@@ -95,7 +106,7 @@ export default class CTimeLine extends Vue {
     this.samples = this.$state.sampleManager.samples;
     this.$nextTick(() => {
       this.redraw();
-    })
+    });
   }
 
   updateSourceHandle() {
@@ -138,6 +149,7 @@ export default class CTimeLine extends Vue {
   redraw() {
     this.redrawGrid();
     this.redrawCursor();
+    this.redrawTransitions();
   }
 
   moveCursor(e: any) {
@@ -302,6 +314,135 @@ export default class CTimeLine extends Vue {
     this.cursorContext.stroke();
   }
 
+  redrawTransitions() {
+    const xOffset = this.timelineElement.scrollLeft;
+    const yOffset = this.timelineElement.scrollTop;
+
+    const width = this.timelineElement.clientWidth;
+    const height = this.timelineElement.clientHeight;
+
+    (this.transitionsElement as any).width = width;
+    (this.transitionsElement as any).height = height;
+
+    this.transitionsContext.clearRect(0, 0, width, height);
+    this.transitionsContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+
+    const pps = this.$state.timelineManager.pps;
+
+    const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
+
+    for (let i = 0; i <= this.samples.length; ++i) {
+      const timeline =
+        i < this.samples.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
+      if (timeline == null) {
+        continue;
+      }
+
+      const height = 128;
+      const spacing = 5;
+
+      const samples: Sample[] = timeline.getSamples();
+      samples.forEach((sample) => {
+        const sampleStart = sample.offset * pps;
+        const sampleEnd = (sample.offset + sample.duration) * pps;
+        const fadeInStart = (sample.offset + sample.fadeInOffset) * pps;
+        const fadeInEnd = fadeInStart + sample.fadeInDuration * pps;
+        const fadeOutEnd = sampleEnd - sample.fadeOutOffset * pps;
+        const fadeOutStart = fadeOutEnd - sample.fadeOutDuration * pps;
+
+        if (sampleStart >= xOffset + width || sampleEnd <= xOffset) {
+          return;
+        }
+
+        const yStart = (height + spacing) * i - yOffset;
+        const yEnd = (height + spacing) * i + height - yOffset;
+
+        if (fadeInStart > xOffset && sample.fadeInOffset > 0) {
+          const left = Math.max(sampleStart, xOffset);
+          const right = Math.min(fadeInStart, xOffset + width);
+
+          this.transitionsContext.fillRect(
+            left - xOffset,
+            yStart,
+            right - left,
+            height
+          );
+        }
+
+        if (fadeInEnd > xOffset && fadeInStart < xOffset + width && sample.fadeInDuration > 0) {
+          const values = Transition.generateExponentialIn(
+            sample.fadeInOffset,
+            0,
+            sample.fadeInDuration
+          );
+
+          if (values.length > 1) {
+            this.transitionsContext.beginPath();
+
+            const step = (sample.fadeInDuration / (values.length - 1)) * pps;
+
+            this.transitionsContext.moveTo(fadeInStart - xOffset, yEnd);
+            for (let i = 1; i < values.length; ++i) {
+              this.transitionsContext.lineTo(
+                fadeInStart + step * i - xOffset,
+                yEnd - values[i] * height
+              );
+            }
+
+            this.transitionsContext.lineTo(fadeInEnd - xOffset, yStart);
+            this.transitionsContext.lineTo(fadeInStart - xOffset, yStart);
+
+            this.transitionsContext.closePath();
+            this.transitionsContext.fill();
+          }
+        }
+
+        if (fadeOutEnd > xOffset && fadeOutStart < xOffset + width && sample.fadeOutDuration > 0) {
+          const values = Transition.generateExponentialOut(
+            sample.fadeOutOffset,
+            0,
+            sample.fadeOutDuration
+          );
+
+          if (values.length > 1) {
+            this.transitionsContext.beginPath();
+
+            const step = (sample.fadeOutDuration / (values.length - 1)) * pps;
+
+            this.transitionsContext.moveTo(fadeOutStart - xOffset, yEnd);
+            for (let i = 1; i < values.length; ++i) {
+              this.transitionsContext.lineTo(
+                fadeOutStart + step * i - xOffset,
+                yEnd - values[i] * height
+              );
+            }
+
+            this.transitionsContext.lineTo(fadeOutEnd - xOffset, yStart);
+            this.transitionsContext.lineTo(fadeOutStart - xOffset, yStart);
+
+            this.transitionsContext.closePath();
+            this.transitionsContext.fill();
+          }
+        }
+
+        if (sampleEnd > xOffset && sample.fadeOutOffset > 0) {
+          const left = Math.max(fadeOutEnd, xOffset);
+          const right = Math.min(sampleEnd, xOffset + width);
+
+          this.transitionsContext.fillRect(
+            left - xOffset,
+            yStart,
+            right - left,
+            height
+          );
+        }
+      });
+    }
+  }
+
   scrollHorizontally(e: any) {
     e = window.event || e;
     var delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
@@ -309,6 +450,11 @@ export default class CTimeLine extends Vue {
 
     this.redraw();
     e.preventDefault();
+  }
+
+  togglePlay() {
+    this.$state.timelineManager.isPlaying = !this.$state.timelineManager
+      .isPlaying;
   }
 
   pad(n: number, width: number, z?: string) {
@@ -375,9 +521,14 @@ export default class CTimeLine extends Vue {
   @include scrollbar();
 
   .grid-canvas,
-  .cursor-canvas {
+  .cursor-canvas,
+  .transitions-canvas {
     position: absolute;
     top: 0;
+  }
+
+  .transitions-canvas {
+    z-index: 4;
   }
 
   .spacer {

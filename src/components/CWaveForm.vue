@@ -1,6 +1,6 @@
 <template>
-  <div class='c-waveform' :style='style'>
-    <div :id='`waveform-${sampleId}`'></div>
+  <div class="c-waveform" :style="style">
+    <div :id="`waveform-${sampleId}`"></div>
   </div>
 </template>
 
@@ -8,6 +8,7 @@
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import WaveSurfer from 'wavesurfer.js';
 
+import { Transition } from '@/model/algorithms/Transition';
 import { Sample } from '@/model/stuff/Sample';
 
 let SAMPLE_ID = 0;
@@ -65,6 +66,7 @@ export default class CWaveForm extends Vue {
 
       this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
 
+      this.$bus.on('samplesChanged', this.handleSeek);
       this.$bus.on('playing', this.updatePlaying);
       this.$bus.on('playPause', this.updatePlaying);
       this.$bus.on('seeked', this.handleSeek);
@@ -149,32 +151,6 @@ export default class CWaveForm extends Vue {
     this.wavesurfer.setVolume(this.$state.timelineManager.volume);
   }
 
-  generateExponentialIn(start: number, current: number, duration: number) {
-    const N = 50;
-    const step = duration / N;
-
-    return Array.from(Array(N + 1).keys())
-      .map((x) => x * step)
-      .filter((x) => x + start >= current)
-      .map((x) => {
-        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
-        return 1 / (1 + Math.pow(Math.E, -t));
-      });
-  }
-
-  generateExponentialOut(start: number, current: number, duration: number) {
-    const N = 50;
-    const step = duration / N;
-
-    return Array.from(Array(N + 1).keys())
-      .map((x) => x * step)
-      .filter((x) => x + start >= current)
-      .map((x) => {
-        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
-        return 1 - 1 / (1 + Math.pow(Math.E, -t));
-      });
-  }
-
   updateEffects() {
     const sampleTime = this.$state.timelineManager.time;
     if (sampleTime < this.sample.offset) {
@@ -205,7 +181,7 @@ export default class CWaveForm extends Vue {
     if (sampleTime < fadeInFinish && fadeInDuration > 0) {
       const start = Math.max(fadeInStart, sampleTime);
 
-      const values = this.generateExponentialIn(
+      const values = Transition.generateExponentialIn(
         fadeInStart,
         start,
         fadeInDuration
@@ -226,7 +202,7 @@ export default class CWaveForm extends Vue {
     if (sampleTime < fadeOutFinish && fadeOutDuration > 0) {
       const start = Math.max(fadeOutStart, sampleTime);
 
-      const values = this.generateExponentialOut(
+      const values = Transition.generateExponentialOut(
         fadeOutStart,
         start,
         fadeOutDuration

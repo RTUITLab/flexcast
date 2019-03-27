@@ -11,7 +11,7 @@ export class TimeLineManager {
   private _lastTimestamp: number = -1;
 
   private _pps: number = 50;
-  private _volume: number = 1;
+  private _volume: number = 0.2;
 
   constructor(sampleManager: SampleManager) {
     this._sampleManager = sampleManager;

@@ -1,13 +1,13 @@
 <template>
-  <div class='c-samplelist'>
-    <div class='drop-zone noselect' :class='{hovered:dragZoneHovered}' ref='drop-zone'>*.mp3</div>
+  <div class="c-samplelist">
+    <div class="drop-zone noselect" :class="{hovered:dragZoneHovered}" ref="drop-zone">*.mp3</div>
 
     <div
-      v-for='(source, index) in sources'
-      :key='`source-${index}`'
-      class='item noselect'
-      :class='getSourceClass(source)'
-      @mousedown='startHandle($event, source)'
+      v-for="(source, index) in sources"
+      :key="`source-${index}`"
+      class="item noselect"
+      :class="getSourceClass(source)"
+      @mousedown="startHandle($event, source)"
     >{{ source.name }}</div>
   </div>
 </template>

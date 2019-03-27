@@ -29,6 +29,8 @@ export class SampleManager {
       return;
     }
 
+    sample.offset = Math.max(sample.offset, 0);
+
     this._samples[index] = sample;
 
     this.updateTime();
