@@ -2,7 +2,7 @@ import { Beats } from '@/model/stuff/Beats';
 import { Sample } from '@/model/stuff/Sample';
 
 export class SampleMerger {
-  public static mergeSamples(samples: Sample[], matchLevel: number = 5) {
+  public static mergeSamples(samples: Sample[], matchLevel: number = 6) {
     if (samples.length < 2) {
       return;
     }
@@ -57,18 +57,21 @@ export class SampleMerger {
     let bestTail = 0;
     let bestHead = 0;
     let bestDelta = Number.MAX_VALUE;
-    for (let i = 0; i < beats1.tail.length - count + 1; i++) {
+    for (let i = beats1.tail.length - count; i >= 0; --i) {
       const fromTail = beats1.tail.slice(i, i + count);
+      const tailBegin = fromTail[0];
+      const tailEnd = fromTail[fromTail.length - 1];
+      const tailBPM = fromTail.length / (tailEnd - tailBegin);
 
-      for (let j = 0; j < beats2.head.length - count + 1; j++) {
+      for (let j = beats2.head.length - count; j >= 0; --j) {
         const fromHead = beats2.head.slice(j, j + count);
-        let delta = 0;
+        const headBegin = fromHead[0];
+        const headEnd = fromHead[fromHead.length - 1];
+        const headBPM = fromHead.length / (headEnd - headBegin);
 
-        for (let index = 0; index < count; index++) {
-          delta += Math.abs(fromTail[index] - fromHead[index]);
-        }
+        const delta = Math.abs(headBPM - tailBPM);
 
-        if (delta < bestDelta) {
+        if (bestDelta === Number.MAX_VALUE || delta < bestDelta) {
           bestDelta = delta;
           bestTail = i;
           bestHead = j;

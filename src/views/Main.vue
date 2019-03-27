@@ -1,11 +1,11 @@
 <template>
-  <div class='home'>
-    <div class='sidebar'>
-      <c-source-list class='sidebar-item'/>
-      <c-controls class='sidebar-item'/>
+  <div class="home">
+    <div class="sidebar">
+      <c-source-list class="sidebar-item"/>
+      <c-controls class="sidebar-item"/>
     </div>
 
-    <div class='timeline'>
+    <div class="timeline">
       <c-timeline/>
     </div>
   </div>

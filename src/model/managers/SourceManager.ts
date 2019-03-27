@@ -49,7 +49,7 @@ export class SourceManager {
 
     const source = new Source(name, await this.loadAudioBuffer(raw));
 
-    const N = 20;
+    const N = 10;
     source.beats = new Beats(
       info.slice(0, N),
       info.slice(Math.max(info.length - N, 1))
@@ -117,10 +117,17 @@ export class SourceManager {
     const source = offlineContext.createBufferSource();
     source.buffer = data;
 
-    const LPF = offlineContext.createBiquadFilter();
-    LPF.type = 'lowpass';
-    source.connect(LPF);
-    LPF.connect(offlineContext.destination);
+    const bandpass = offlineContext.createBiquadFilter();
+    bandpass.type = 'bandpass';
+
+    const lowFrequency = 60;
+    const highFrequency = 130;
+
+    bandpass.frequency.value = (highFrequency + lowFrequency) * 0.5;
+    bandpass.Q.value =
+      bandpass.frequency.value / (highFrequency - lowFrequency);
+    source.connect(bandpass);
+    bandpass.connect(offlineContext.destination);
     source.start(0);
 
     const result = await offlineContext.startRendering();
