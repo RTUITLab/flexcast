@@ -1,0 +1,18 @@
+
+<svg width="32px" height="41px" viewBox="0 0 32 41" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="0%" id="linearGradient-1">
+            <stop stop-color="#EEEEEE" offset="0%"></stop>
+            <stop stop-color="#DFE4E4" offset="31.3064184%"></stop>
+            <stop stop-color="#C9D5D6" offset="32.6385107%"></stop>
+            <stop stop-color="#BCCCCD" offset="33.9285295%"></stop>
+            <stop stop-color="#85A6A8" offset="34.9293787%"></stop>
+            <stop stop-color="#054E53" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="mixer" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Desktop-HD" transform="translate(-924.000000, -670.000000)" stroke="#006A7E">
+            <rect id="Rectangle" fill="url(#linearGradient-1)" transform="translate(940.543886, 686.753104) rotate(35.000000) translate(-940.543886, -686.753104) " x="932.543886" y="672.753104" width="16" height="28"></rect>
+        </g>
+    </g>
+</svg>

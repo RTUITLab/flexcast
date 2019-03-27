@@ -1,13 +1,12 @@
 <template>
   <div class="home">
     <div class="sidebar">
-      <c-sample-list class="sidebar-item"/>
-
+      <c-source-list class="sidebar-item"/>
       <c-controls class="sidebar-item"/>
     </div>
 
     <div class="timeline">
-      <c-timeline :timelines="samples.map(v => [v])"/>
+      <c-timeline/>
     </div>
   </div>
 </template>
@@ -15,35 +14,31 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import CControls from '@/components/CControls.vue';
-import CSampleList from '@/components/CSampleList.vue';
+import CSourceList from '@/components/CSourceList.vue';
 import CTimeLine from '@/components/CTimeLine.vue';
 
-import { Sample } from '@/model/Sample';
-import state from '@/model/State';
+import { Sample } from '@/model/stuff/Sample';
 
 @Component({
   components: {
     'c-controls': CControls,
-    'c-sample-list': CSampleList,
+    'c-source-list': CSourceList,
     'c-timeline': CTimeLine
   }
 })
 export default class Home extends Vue {
-  private samples: Sample[] = [];
-
   created() {
-    state.on('samplesChanged', this.updateSamples);
-    this.updateSamples();
-  }
+    const testSources = [
+      'https://files.rtuitlab.ru/green-light.mp3',
+      'https://files.rtuitlab.ru/veerus.mp3',
+      'https://files.rtuitlab.ru/Bang.mp3',
+      'https://files.rtuitlab.ru/WantYou.mp3',
+      'https://files.rtuitlab.ru/wecallforlove.mp3'
+    ];
 
-  mounted() {
-    state.addSource('https://files.rtuitlab.ru/green-light.mp3');
-    state.addSource('https://files.rtuitlab.ru/mind.mp3');
-    state.addSource('https://files.rtuitlab.ru/veerus.mp3');
-  }
-
-  updateSamples() {
-    this.samples = state.samples;
+    testSources.forEach((track) => {
+      this.$state.sourceManager.addSource(track);
+    });
   }
 }
 </script>
@@ -55,15 +50,14 @@ export default class Home extends Vue {
   flex-direction: row;
 
   .sidebar {
+    flex: 1;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    flex: 1;
     box-shadow: 2px 0px 2px 0px rgba(0, 0, 0, 0.66);
 
-    .sidebar-item {
-      &:last-child {
-        margin-top: auto;
-      }
+    .sidebar-item:first-child {
+      flex-grow: 1;
     }
   }
 

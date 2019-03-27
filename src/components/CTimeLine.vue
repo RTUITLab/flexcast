@@ -1,24 +1,20 @@
 <template>
   <div class="c-timeline" ref="timeline" @scroll="redraw">
     <canvas class="grid-canvas" ref="grid-canvas"></canvas>
+    <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
+    <canvas class="transitions-canvas" ref="transitions-canvas"></canvas>
 
     <c-timeline-row
-      v-for="(samples, index) in timelines"
-      :key="`timeline-${index}`"
-      :samples="samples"
+      v-for="(sample, index) in samples"
+      :key="`timeline-${sample.id}-${index}`"
       :ref="`timeline-${index}`"
+      :sample="sample"
       @needsRedraw="redraw"
     />
 
     <template v-if="sourceHandle">
-      <c-timeline-row
-        :samples="newSample ? [newSample] : []"
-        :ref="`timeline-new`"
-        @needsRedraw="redraw"
-      />
+      <c-timeline-row :sample="newSample" :ref="`timeline-new`" @needsRedraw="redraw"/>
     </template>
-
-    <canvas class="cursor-canvas" ref="cursor-canvas"></canvas>
 
     <div class="spacer"></div>
   </div>
@@ -28,9 +24,11 @@
 import { Component, Watch, Prop, Vue } from 'vue-property-decorator';
 import CTimeLineRow from '@/components/CTimeLineRow.vue';
 
-import { IWindowSlice } from '@/model/WindowSlice';
-import { Sample, ISource, ISourceHandle } from '@/model/Sample';
-import state from '@/model/State';
+import { SourceHandle } from '@/model/managers/SourceManager';
+import { Sample } from '@/model/stuff/Sample';
+import { TimeLineManager } from '@/model/managers/TimeLineManager';
+import { Rectangle } from '@/model/stuff/Rectangle';
+import { Transition } from '@/model/algorithms/Transition';
 
 @Component({
   components: {
@@ -38,28 +36,39 @@ import state from '@/model/State';
   }
 })
 export default class CTimeLine extends Vue {
+  private timelineManager!: TimeLineManager;
+
   private timelineElement!: HTMLElement;
-  private cursorElement!: HTMLElement;
-  private gridElement!: HTMLElement;
+
+  private gridElement!: HTMLCanvasElement;
   private gridContext!: CanvasRenderingContext2D;
+
+  private cursorElement!: HTMLCanvasElement;
   private cursorContext!: CanvasRenderingContext2D;
 
-  private sourceHandle: ISourceHandle | null = null;
+  private transitionsElement!: HTMLCanvasElement;
+  private transitionsContext!: CanvasRenderingContext2D;
+
+  private samples: Sample[] = [];
   private newSample: Sample | null = null;
 
-  @Prop({
-    type: Array,
-    default: []
-  })
-  public timelines!: Sample[][];
+  private sourceHandle: SourceHandle | null = null;
 
   mounted() {
-    this.timelineElement = this.$refs['timeline'] as HTMLElement;
-    this.cursorElement = this.$refs['cursor-canvas'] as HTMLElement;
-    this.gridElement = this.$refs['grid-canvas'] as HTMLElement;
+    this.timelineManager = this.$state.timelineManager;
 
-    this.gridContext = (this.gridElement as any).getContext('2d');
-    this.cursorContext = (this.cursorElement as any).getContext('2d');
+    this.timelineElement = this.$refs['timeline'] as HTMLElement;
+
+    this.gridElement = this.$refs['grid-canvas'] as HTMLCanvasElement;
+    this.gridContext = this.gridElement.getContext('2d')!;
+
+    this.cursorElement = this.$refs['cursor-canvas'] as HTMLCanvasElement;
+    this.cursorContext = this.cursorElement.getContext('2d')!;
+
+    this.transitionsElement = this.$refs[
+      'transitions-canvas'
+    ] as HTMLCanvasElement;
+    this.transitionsContext = this.transitionsElement.getContext('2d')!;
 
     this.timelineElement.addEventListener(
       'mousewheel',
@@ -72,29 +81,40 @@ export default class CTimeLine extends Vue {
       false
     );
 
+    window.addEventListener('keypress', this.togglePlay);
+
     this.timelineElement.addEventListener('click', this.moveCursor);
 
-    state.on('handleStartedFinished', this.updateSourceHandle);
-    state.on('handleMoved', this.updateSourceHandle);
+    this.$bus.on('samplesChanged', this.updateSamples);
 
-    state.on('playing', this.redraw);
-    state.on('seeked', this.redraw);
-    state.on('scrollToCursor', this.updateCursor);
+    this.$bus.on('handleStarted', this.updateSourceHandle);
+    this.$bus.on('handleFinished', this.updateSourceHandle);
+    this.$bus.on('handleMoved', this.updateSourceHandle);
 
-    state.on('ppsChanged', this.redraw);
+    this.$bus.on('playing', this.redraw);
+    this.$bus.on('seeked', this.redraw);
+    this.$bus.on('scrollToCursor', this.updateCursor);
 
-    state.on('ready', this.redraw);
-    this.redraw();
+    this.$bus.on('ppsChanged', this.redraw);
 
     window.addEventListener('resize', this.redraw);
+
+    this.redraw();
+  }
+
+  updateSamples() {
+    this.samples = this.$state.sampleManager.samples;
+    this.$nextTick(() => {
+      this.redraw();
+    });
   }
 
   updateSourceHandle() {
-    this.sourceHandle = state.sourceHandle;
+    this.sourceHandle = this.$state.sourceManager.sourceHandle;
 
     if (this.sourceHandle == null) {
       if (this.newSample) {
-        state.addSample(this.newSample);
+        this.$state.sampleManager.addSample(this.newSample);
       }
 
       this.newSample = null;
@@ -103,18 +123,20 @@ export default class CTimeLine extends Vue {
 
     const xOffset = this.timelineElement.scrollLeft;
     const x = this.sourceHandle.pageX - this.timelineElement.offsetLeft;
-    const offset = Math.max(0, (xOffset + x) / state.pps);
+    const offset = Math.max(0, (xOffset + x) / this.timelineManager.pps);
 
     if (this.newSample == null) {
       const source = this.sourceHandle.source;
-      this.newSample = new Sample(source, offset);
-    } else {
-      this.newSample.offset = offset;
+      this.newSample = new Sample(source);
     }
+
+    this.newSample.offset = offset;
+    this.redraw();
   }
 
   updateCursor() {
-    this.timelineElement.scrollLeft = (state.time / 1000) * state.pps;
+    this.timelineElement.scrollLeft =
+      this.timelineManager.time * this.timelineManager.pps;
     this.redrawCursor();
   }
 
@@ -127,6 +149,7 @@ export default class CTimeLine extends Vue {
   redraw() {
     this.redrawGrid();
     this.redrawCursor();
+    this.redrawTransitions();
   }
 
   moveCursor(e: any) {
@@ -135,9 +158,9 @@ export default class CTimeLine extends Vue {
     }
 
     const x = e.pageX - this.timelineElement.offsetLeft;
-
     const pixels = this.timelineElement.scrollLeft + x;
-    state.time = (pixels / state.pps) * 1000;
+
+    this.timelineManager.time = pixels / this.timelineManager.pps;
 
     this.redrawCursor();
   }
@@ -149,9 +172,9 @@ export default class CTimeLine extends Vue {
     const width = this.timelineElement.clientWidth;
     const height = this.timelineElement.clientHeight;
 
-    for (let i = 0; i <= this.timelines.length; ++i) {
+    for (let i = 0; i <= this.samples.length; ++i) {
       const timeline =
-        i < this.timelines.length
+        i < this.samples.length
           ? (this.$refs[`timeline-${i}`] as any)[0]
           : (this.$refs[`timeline-new`] as any);
 
@@ -159,12 +182,14 @@ export default class CTimeLine extends Vue {
         continue;
       }
 
-      timeline.updateVisibleItems({
-        offsetLeft: xOffset,
-        offsetTop: yOffset,
-        width,
-        height
-      });
+      timeline.updateVisibleItems(
+        new Rectangle({
+          offsetLeft: xOffset,
+          offsetTop: yOffset,
+          width,
+          height
+        })
+      );
     }
 
     (this.gridElement as any).width = width;
@@ -177,17 +202,18 @@ export default class CTimeLine extends Vue {
     this.gridContext.beginPath();
 
     let step = 1;
-    if (state.pps < 2) {
+    const pps = this.timelineManager.pps;
+    if (pps < 2) {
       step = 60;
-    } else if (state.pps < 10) {
+    } else if (pps < 10) {
       step = 30;
-    } else if (state.pps < 20) {
+    } else if (pps < 20) {
       step = 15;
-    } else if (state.pps < 45) {
+    } else if (pps < 45) {
       step = 5;
     }
 
-    const pixelStep = state.pps * step;
+    const pixelStep = pps * step;
 
     let elapsedSteps = Math.ceil(xOffset / pixelStep);
 
@@ -235,7 +261,7 @@ export default class CTimeLine extends Vue {
 
     this.cursorContext.beginPath();
 
-    const timePixels = (state.time * state.pps) / 1000;
+    const timePixels = this.timelineManager.time * this.timelineManager.pps;
     this.cursorContext.strokeStyle = '#dd282D';
 
     const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
@@ -245,9 +271,9 @@ export default class CTimeLine extends Vue {
       this.cursorContext.lineTo(timePixels - xOffset, height);
     }
 
-    for (let i = 0; i <= this.timelines.length; ++i) {
+    for (let i = 0; i <= this.samples.length; ++i) {
       const timeline =
-        i < this.timelines.length
+        i < this.samples.length
           ? (this.$refs[`timeline-${i}`] as any)[0]
           : (this.$refs[`timeline-new`] as any);
 
@@ -267,7 +293,7 @@ export default class CTimeLine extends Vue {
         const beats = sample.source.beats;
 
         beats.head.concat(beats.tail).forEach((beat) => {
-          const x = (beat + sample.offset) * state.pps;
+          const x = (beat + sample.offset) * this.timelineManager.pps;
 
           if (!checkInRange(x)) {
             return;
@@ -288,6 +314,143 @@ export default class CTimeLine extends Vue {
     this.cursorContext.stroke();
   }
 
+  redrawTransitions() {
+    const xOffset = this.timelineElement.scrollLeft;
+    const yOffset = this.timelineElement.scrollTop;
+
+    const width = this.timelineElement.clientWidth;
+    const height = this.timelineElement.clientHeight;
+
+    (this.transitionsElement as any).width = width;
+    (this.transitionsElement as any).height = height;
+
+    this.transitionsContext.clearRect(0, 0, width, height);
+    this.transitionsContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+
+    const pps = this.$state.timelineManager.pps;
+
+    const checkInRange = (x: number) => x >= xOffset && x <= xOffset + width;
+
+    for (let i = 0; i <= this.samples.length; ++i) {
+      const timeline =
+        i < this.samples.length
+          ? (this.$refs[`timeline-${i}`] as any)[0]
+          : (this.$refs[`timeline-new`] as any);
+
+      if (timeline == null) {
+        continue;
+      }
+
+      const height = 128;
+      const spacing = 5;
+
+      const samples: Sample[] = timeline.getSamples();
+      samples.forEach((sample) => {
+        const sampleStart = sample.offset * pps;
+        const sampleEnd = (sample.offset + sample.duration) * pps;
+        const fadeInStart = (sample.offset + sample.fadeInOffset) * pps;
+        const fadeInEnd = fadeInStart + sample.fadeInDuration * pps;
+        const fadeOutEnd = sampleEnd - sample.fadeOutOffset * pps;
+        const fadeOutStart = fadeOutEnd - sample.fadeOutDuration * pps;
+
+        if (sampleStart >= xOffset + width || sampleEnd <= xOffset) {
+          return;
+        }
+
+        const yStart = (height + spacing) * i - yOffset;
+        const yEnd = (height + spacing) * i + height - yOffset;
+
+        if (fadeInStart > xOffset && sample.fadeInOffset > 0) {
+          const left = Math.max(sampleStart, xOffset);
+          const right = Math.min(fadeInStart, xOffset + width);
+
+          this.transitionsContext.fillRect(
+            left - xOffset,
+            yStart,
+            right - left,
+            height
+          );
+        }
+
+        if (
+          fadeInEnd > xOffset &&
+          fadeInStart < xOffset + width &&
+          sample.fadeInDuration > 0
+        ) {
+          const values = Transition.generateExponentialIn(
+            sample.fadeInOffset,
+            0,
+            sample.fadeInDuration
+          );
+
+          if (values.length > 1) {
+            this.transitionsContext.beginPath();
+
+            const step = (sample.fadeInDuration / (values.length - 1)) * pps;
+
+            this.transitionsContext.moveTo(fadeInStart - xOffset, yEnd);
+            for (let i = 1; i < values.length; ++i) {
+              this.transitionsContext.lineTo(
+                fadeInStart + step * i - xOffset,
+                yEnd - values[i] * height
+              );
+            }
+
+            this.transitionsContext.lineTo(fadeInEnd - xOffset, yStart);
+            this.transitionsContext.lineTo(fadeInStart - xOffset, yStart);
+
+            this.transitionsContext.closePath();
+            this.transitionsContext.fill();
+          }
+        }
+
+        if (
+          fadeOutEnd > xOffset &&
+          fadeOutStart < xOffset + width &&
+          sample.fadeOutDuration > 0
+        ) {
+          const values = Transition.generateExponentialOut(
+            sample.fadeOutOffset,
+            0,
+            sample.fadeOutDuration
+          );
+
+          if (values.length > 1) {
+            this.transitionsContext.beginPath();
+
+            const step = (sample.fadeOutDuration / (values.length - 1)) * pps;
+
+            this.transitionsContext.moveTo(fadeOutStart - xOffset, yEnd);
+            for (let i = 1; i < values.length; ++i) {
+              this.transitionsContext.lineTo(
+                fadeOutStart + step * i - xOffset,
+                yEnd - values[i] * height
+              );
+            }
+
+            this.transitionsContext.lineTo(fadeOutEnd - xOffset, yStart);
+            this.transitionsContext.lineTo(fadeOutStart - xOffset, yStart);
+
+            this.transitionsContext.closePath();
+            this.transitionsContext.fill();
+          }
+        }
+
+        if (sampleEnd > xOffset && sample.fadeOutOffset > 0) {
+          const left = Math.max(fadeOutEnd, xOffset);
+          const right = Math.min(sampleEnd, xOffset + width);
+
+          this.transitionsContext.fillRect(
+            left - xOffset,
+            yStart,
+            right - left,
+            height
+          );
+        }
+      });
+    }
+  }
+
   scrollHorizontally(e: any) {
     e = window.event || e;
     var delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
@@ -295,6 +458,11 @@ export default class CTimeLine extends Vue {
 
     this.redraw();
     e.preventDefault();
+  }
+
+  togglePlay() {
+    this.$state.timelineManager.isPlaying = !this.$state.timelineManager
+      .isPlaying;
   }
 
   pad(n: number, width: number, z?: string) {
@@ -361,9 +529,14 @@ export default class CTimeLine extends Vue {
   @include scrollbar();
 
   .grid-canvas,
-  .cursor-canvas {
+  .cursor-canvas,
+  .transitions-canvas {
     position: absolute;
     top: 0;
+  }
+
+  .transitions-canvas {
+    z-index: 4;
   }
 
   .spacer {

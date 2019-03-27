@@ -3,8 +3,8 @@
     <div class="row instruments">
       <div
         class="button noselect"
-        :class="getInstrumentClass('cursor')"
-        @click="selectInstrument('cursor')"
+        :class="getInstrumentClass('mouse')"
+        @click="selectInstrument('mouse')"
       >
         <img src="icons/cursor.svg">
       </div>
@@ -14,6 +14,13 @@
         @click="selectInstrument('move')"
       >
         <img src="icons/arrows.svg">
+      </div>
+      <div
+        class="button noselect"
+        :class="getInstrumentClass('remove')"
+        @click="selectInstrument('remove')"
+      >
+        <img src="icons/eraser.svg">
       </div>
       <div class="button noselect" @click="automerge">
         <img src="icons/blocks.svg">
@@ -27,12 +34,12 @@
         <img src="icons/backward.svg">
       </div>
       <div class="button play noselect" @click="togglePlay">
-        <span v-if="isPlaying">
+        <template v-if="isPlaying">
           <img src="icons/pause.svg">
-        </span>
-        <span v-else>
+        </template>
+        <template v-else>
           <img src="icons/play.svg">
-        </span>
+        </template>
       </div>
       <div class="button noselect" @click="buttonForward">
         <img src="icons/forward.svg">
@@ -51,24 +58,24 @@
           v-model="volume"
           min="0"
           max="100"
-          value="100"
+          value="20"
           class="slider"
           @input="volumeChanged"
         >
       </div>
       <div class="button noselect">
-        <img src="icons/volumemax.svg" height="25px">
+        <img src="icons/volumemax.svg">
       </div>
     </div>
     <div class="row">
       <div class="button noselect">
-        <img src="icons/lowscale.svg" height="20px">
+        <img src="icons/lowscale.svg">
       </div>
       <div class="slidecontainer">
         <input type="range" v-model="zoom" min="1" max="200" class="slider" @input="zoomChanged">
       </div>
       <div class="button noselect">
-        <img src="icons/highscale.svg" height="20px">
+        <img src="icons/highscale.svg">
       </div>
     </div>
   </div>
@@ -80,8 +87,7 @@ import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons/play';
 import 'vue-awesome/icons/pause';
 
-import state from '@/model/State';
-import { InstrumentType } from '@/model/Instrument';
+import { InstrumentType } from '@/model/managers/InstrumentManager';
 
 @Component({
   components: {
@@ -89,52 +95,46 @@ import { InstrumentType } from '@/model/Instrument';
   }
 })
 export default class CControls extends Vue {
-  private isReady: boolean = false;
-
+  private instrument: InstrumentType = 'mouse';
   private isPlaying: boolean = false;
 
   private zoom: number = 20;
-  private volume: number = 100;
+  private volume: number = 20;
 
-  private instrument: InstrumentType | null = null;
-
-  mounted() {
-    state.on('ready', this.handleReady);
-    state.on('playPause', this.updateState);
-    state.on('instrumentChanged', this.updateInstrument);
-  }
-
-  handleReady() {
-    this.isReady = true;
+  created() {
+    this.$bus.on('playPause', this.updateState);
+    this.$bus.on('instrumentChanged', this.updateState);
+    this.updateState();
   }
 
   togglePlay() {
-    if (!this.isReady) {
-      return;
-    }
+    const isReady = this.$state.sampleManager.samples.every(
+      (sample) => sample.isComplete
+    );
 
     this.isPlaying = !this.isPlaying;
-    state.isPlaying = this.isPlaying;
+    this.$state.timelineManager.isPlaying = this.isPlaying;
   }
 
   updateState() {
-    this.isPlaying = state.isPlaying;
+    this.isPlaying = this.$state.timelineManager.isPlaying;
+    this.instrument = this.$state.instrumentManager.instrument;
   }
 
   volumeChanged(value: Number) {
     this.volume = Number(this.volume);
-    state.volume = this.volume / 100;
+    this.$state.timelineManager.volume = this.volume / 100;
   }
 
   zoomChanged(value: Number) {
     this.zoom = Number(this.zoom);
-    state.pps = this.zoom;
+    this.$state.timelineManager.pps = this.zoom;
   }
 
   buttonBackward() {
-    const seconds = state.time / 1000;
+    const seconds = this.$state.timelineManager.time;
 
-    const leftOrigins = state.samples
+    const leftOrigins = this.$state.sampleManager.samples
       .map((v) => {
         return seconds - v.offset;
       })
@@ -152,15 +152,14 @@ export default class CControls extends Vue {
       return;
     }
 
-    state.time = (seconds - leftOrigins[0]) * 1000;
-
-    state.scrollToCursor();
+    this.$state.timelineManager.time = seconds - leftOrigins[0];
+    this.$state.timelineManager.scrollToCursor();
   }
 
   buttonForward() {
-    const seconds = state.time / 1000;
+    const seconds = this.$state.timelineManager.time;
 
-    const rightEnds = state.samples
+    const rightEnds = this.$state.sampleManager.samples
       .map((v) => {
         return v.offset + v.duration - seconds;
       })
@@ -178,55 +177,48 @@ export default class CControls extends Vue {
       return;
     }
 
-    state.time = (rightEnds[0] + seconds) * 1000;
-    state.scrollToCursor();
+    this.$state.timelineManager.time = rightEnds[0] + seconds;
+    this.$state.timelineManager.scrollToCursor();
   }
 
   buttonBegin() {
-    state.time = 0;
-    state.scrollToCursor();
+    this.$state.timelineManager.time = 0;
+    this.$state.timelineManager.scrollToCursor();
   }
 
   buttonEnd() {
-    state.time = state.maxTime;
-    state.scrollToCursor();
-  }
-
-  updateInstrument() {
-    this.instrument = state.instrument;
+    this.$state.timelineManager.time = this.$state.sampleManager.maxTime;
+    this.$state.timelineManager.scrollToCursor();
   }
 
   automerge() {
-    state.mergeSamples();
+    this.$state.sampleManager.mergeSamples();
   }
 
-  selectInstrument(instrument: InstrumentType) {
-    state.instrument = instrument;
+  selectInstrument(type: InstrumentType) {
+    this.$state.instrumentManager.instrument = type;
+    this.$forceUpdate();
   }
 
-  getInstrumentClass(instrument: InstrumentType) {
+  getInstrumentClass(type: InstrumentType) {
     return {
-      active: this.instrument != null && this.instrument == instrument
+      active: this.instrument === type
     };
   }
 }
 </script>
 
 <style lang="scss">
+$controls-height: 30px;
+
 .c-controls {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   background-color: #03282d;
-  justify-items: center;
 
   .row {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    justify-items: center;
-    padding-left: 10px;
-    padding-right: 10px;
+    align-items: center;
 
     &.instruments {
       background-color: #021d20;
@@ -243,11 +235,33 @@ export default class CControls extends Vue {
     }
   }
 
+  .button {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: $controls-height;
+    padding: 5px;
+
+    img {
+      width: auto;
+      min-height: 100%;
+    }
+
+    &.play {
+      height: 50px;
+    }
+
+    &:hover,
+    &.active {
+      cursor: pointer;
+    }
+  }
+
   .slidecontainer {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 40px;
     margin: 0px 5px;
 
     .slider {
@@ -283,31 +297,6 @@ export default class CControls extends Vue {
         border: 2px solid rgba(100, 180, 186, 0.85);
         cursor: pointer;
       }
-    }
-  }
-
-  .button {
-    color: #232532;
-    text-align: center;
-    margin: 5px;
-
-    &:hover,
-    &.active {
-      cursor: pointer;
-    }
-
-    &.play {
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      line-height: 50px;
-      font-size: 20pt;
-    }
-
-    &:not(.play) {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
     }
   }
 }

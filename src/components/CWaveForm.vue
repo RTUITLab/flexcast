@@ -6,12 +6,10 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { Sample } from '@/model/Sample';
-import state from '@/model/State';
-
 import WaveSurfer from 'wavesurfer.js';
 
-import { Effect } from '@/model/Effects';
+import { Transition } from '@/model/algorithms/Transition';
+import { Sample } from '@/model/stuff/Sample';
 
 let SAMPLE_ID = 0;
 
@@ -28,8 +26,6 @@ export default class CWaveForm extends Vue {
   private isPlaying: boolean = false;
 
   private shouldPlay: boolean = false;
-
-  private effects: Effect[] = [];
 
   created() {
     this.sampleId = SAMPLE_ID++;
@@ -52,10 +48,10 @@ export default class CWaveForm extends Vue {
       this.wavesurfer.toggleInteraction();
       this.wavesurfer.toggleScroll();
 
-      state.on('ppsChanged', this.updateZoom);
+      this.$bus.on('ppsChanged', this.updateZoom);
       this.updateZoom();
 
-      state.on('volumeChanged', this.updateVolume);
+      this.$bus.on('volumeChanged', this.updateVolume);
       this.updateVolume();
 
       this.wavesurfer.on('error', (err: any) => {
@@ -65,23 +61,27 @@ export default class CWaveForm extends Vue {
       this.wavesurfer.on('ready', () => {
         const duration = this.wavesurfer.getDuration();
         this.sample.duration = duration;
-        state.updateSample(this.sample);
+        this.$state.sampleManager.updateSample(this.sample);
       });
 
       this.wavesurfer.loadDecodedBuffer(this.sample.source.data);
 
-      state.on('playing', this.updatePlaying);
-      state.on('playPause', this.updatePlaying);
-      state.on('seeked', this.handleSeek);
+      this.$bus.on('samplesChanged', this.handleSeek);
+      this.$bus.on('playing', this.updatePlaying);
+      this.$bus.on('playPause', this.updatePlaying);
+      this.$bus.on('seeked', this.handleSeek);
     });
   }
 
   beforeDestroy() {
-    state.off('ppsChanged', this.updateZoom);
-    state.off('volumeChanged', this.updateVolume);
-    state.off('playing', this.updatePlaying);
-    state.off('playPause', this.updatePlaying);
-    state.off('seeked', this.handleSeek);
+    console.log('destroy');
+
+    this.$bus.off('ppsChanged', this.updateZoom);
+    this.$bus.off('volumeChanged', this.updateVolume);
+    this.$bus.off('samplesChanged', this.handleSeek);
+    this.$bus.off('playing', this.updatePlaying);
+    this.$bus.off('playPause', this.updatePlaying);
+    this.$bus.off('seeked', this.handleSeek);
   }
 
   handleSeek() {
@@ -89,7 +89,7 @@ export default class CWaveForm extends Vue {
       return;
     }
 
-    const seconds = state.time / 1000;
+    const seconds = this.$state.timelineManager.time;
 
     let progress = 0;
     if (seconds > this.sample.offset + this.sample.duration) {
@@ -101,12 +101,11 @@ export default class CWaveForm extends Vue {
     this.wavesurfer.seekTo(progress);
 
     this.updateEffects();
-
     this.updatePlaying();
   }
 
   updatePlaying() {
-    this.shouldPlay = state.isPlaying;
+    this.shouldPlay = this.$state.timelineManager.isPlaying;
 
     const inRange = this.isInRange();
     if (inRange) {
@@ -125,7 +124,9 @@ export default class CWaveForm extends Vue {
     if (!this.sample.isComplete) {
       return false;
     }
-    const seconds = state.time / 1000;
+
+    const seconds = this.$state.timelineManager.time;
+
     return (
       seconds >= this.sample.offset &&
       seconds <= this.sample.offset + this.sample.duration
@@ -136,10 +137,10 @@ export default class CWaveForm extends Vue {
     if (this.wavesurfer == null) {
       return;
     }
-    this.pps = state.pps;
+    this.pps = this.$state.timelineManager.pps;
 
     new Promise((resolve, reject) => {
-      this.wavesurfer.zoom(state.pps);
+      this.wavesurfer.zoom(this.$state.timelineManager.pps);
       resolve();
     });
   }
@@ -149,38 +150,12 @@ export default class CWaveForm extends Vue {
       return;
     }
 
-    this.volume = state.volume;
-    this.wavesurfer.setVolume(state.volume);
-  }
-
-  generateExponentialIn(start: number, current: number, duration: number) {
-    const N = 50;
-    const step = duration / N;
-
-    return Array.from(Array(N + 1).keys())
-      .map((x) => x * step)
-      .filter((x) => x + start >= current)
-      .map((x) => {
-        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
-        return 1 / (1 + Math.pow(Math.E, -t));
-      });
-  }
-
-  generateExponentialOut(start: number, current: number, duration: number) {
-    const N = 50;
-    const step = duration / N;
-
-    return Array.from(Array(N + 1).keys())
-      .map((x) => x * step)
-      .filter((x) => x + start >= current)
-      .map((x) => {
-        const t = ((x - duration / 2) * 4 * Math.PI) / duration;
-        return 1 - 1 / (1 + Math.pow(Math.E, -t));
-      });
+    this.volume = this.$state.timelineManager.volume;
+    this.wavesurfer.setVolume(this.$state.timelineManager.volume);
   }
 
   updateEffects() {
-    const sampleTime = state.time / 1000;
+    const sampleTime = this.$state.timelineManager.time;
     if (sampleTime < this.sample.offset) {
       return;
     }
@@ -209,7 +184,7 @@ export default class CWaveForm extends Vue {
     if (sampleTime < fadeInFinish && fadeInDuration > 0) {
       const start = Math.max(fadeInStart, sampleTime);
 
-      const values = this.generateExponentialIn(
+      const values = Transition.generateExponentialIn(
         fadeInStart,
         start,
         fadeInDuration
@@ -230,7 +205,7 @@ export default class CWaveForm extends Vue {
     if (sampleTime < fadeOutFinish && fadeOutDuration > 0) {
       const start = Math.max(fadeOutStart, sampleTime);
 
-      const values = this.generateExponentialOut(
+      const values = Transition.generateExponentialOut(
         fadeOutStart,
         start,
         fadeOutDuration
@@ -247,7 +222,7 @@ export default class CWaveForm extends Vue {
       );
     }
     if (sampleTime < sampleStart + this.sample.duration && fadeOutOffset > 0) {
-      const start = sampleStart + this.sample.duration;
+      const start = Math.max(fadeOutFinish, sampleTime);
       node.gain.setValueAtTime(0, toContextTime(start));
     }
 

@@ -1,13 +1,16 @@
 <template>
   <div class="c-timeline-row">
-    <c-waveform v-for="(sample, index) in samples" :key="`waveform-${index}`" :sample="sample"/>
+    <c-waveform :sample="sample"/>
 
     <template v-for="item in visibleItems">
       <div
         class="item noselect"
-        :style="generateStyle(item)"
+        :style="getStyle(item)"
+        :class="getClass(item)"
         :key="`item-${item.sample.id}`"
-      >{{item.sample.source.url}}</div>
+        @mousedown="startMove(item)"
+        @click="removeItem(item)"
+      >{{item.sample.source.name}}</div>
     </template>
   </div>
 </template>
@@ -16,14 +19,13 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import CWaveForm from '@/components/CWaveForm.vue';
 
-import { Sample, ISample } from '@/model/Sample';
-import { IWindowSlice, contains } from '@/model/WindowSlice';
-import state from '@/model/State';
+import { InstrumentType } from '@/model/managers/InstrumentManager';
+import { Rectangle } from '@/model/stuff/Rectangle';
+import { Sample } from '@/model/stuff/Sample';
 
 interface IVisibleItem {
   sample: Sample;
-  left: number;
-  width: number;
+  rectangle: Rectangle;
 }
 
 @Component({
@@ -32,48 +34,105 @@ interface IVisibleItem {
   }
 })
 export default class CTimeLineRow extends Vue {
-  @Prop({
-    type: Array,
-    default: []
-  })
-  public samples!: Sample[];
+  private instrument!: InstrumentType;
+
+  private currentItem: Sample | null = null;
+
+  @Prop()
+  public sample!: Sample;
 
   private visibleItems: IVisibleItem[] = [];
 
-  public updateVisibleItems(windowSlice: IWindowSlice) {
-    let result: IVisibleItem[] = [];
+  created() {
+    this.$bus.on('instrumentChanged', this.updateState);
+    this.updateState();
 
-    this.samples.forEach((sample) => {
-      if (!sample.isComplete) {
+    window.addEventListener('mouseup', () => {
+      this.currentItem = null;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (this.currentItem == null) {
         return;
       }
 
-      const left = sample.offset * state.pps;
-      const width = sample.duration * state.pps;
+      this.$state.timelineManager.isPlaying = false;
 
-      const area = contains(windowSlice, left, width);
-
-      if (area) {
-        result.push({
-          sample: sample,
-          left: area.left,
-          width: area.width
-        });
-      }
+      this.currentItem.offset += e.movementX / this.$state.timelineManager.pps;
+      this.$state.sampleManager.updateSample(this.currentItem);
     });
+  }
+
+  beforeDestroy() {
+    this.$bus.off('instrumentChanged', this.updateState);
+  }
+
+  updateState() {
+    this.instrument = this.$state.instrumentManager.instrument;
+    this.$forceUpdate();
+  }
+
+  startMove(item: IVisibleItem) {
+    if (this.currentItem != null || this.instrument !== 'move') {
+      return;
+    }
+
+    this.currentItem = item.sample;
+  }
+
+  public updateVisibleItems(windowRectangle: Rectangle) {
+    let result: IVisibleItem[] = [];
+
+    if (!this.sample.isComplete) {
+      return;
+    }
+
+    const left = this.sample.offset * this.$state.timelineManager.pps;
+    const width = this.sample.duration * this.$state.timelineManager.pps;
+
+    const intersection = windowRectangle.findHorizontalIntersection(
+      new Rectangle({
+        offsetLeft: left,
+        offsetTop: 0,
+        width,
+        height: 128
+      })
+    );
+
+    if (intersection) {
+      result.push({
+        sample: this.sample,
+        rectangle: intersection
+      });
+    }
 
     this.visibleItems = result;
   }
 
-  generateStyle(item: IVisibleItem) {
+  removeItem(item: IVisibleItem) {
+    if (this.$state.instrumentManager.instrument !== 'remove') {
+      return;
+    }
+
+    this.$state.sampleManager.removeSample(item.sample);
+  }
+
+  getStyle(item: IVisibleItem) {
     return {
-      left: `${item.left}px`,
-      width: `${item.width}px`
+      left: `${item.rectangle.offsetLeft}px`,
+      width: `${item.rectangle.width}px`
+    };
+  }
+
+  getClass(item: IVisibleItem) {
+    return {
+      'instrument-mouse': this.instrument === 'mouse',
+      'instrument-move': this.instrument === 'move'
     };
   }
 
   public getSamples() {
-    return this.samples;
+    return [this.sample];
   }
 }
 </script>
@@ -94,7 +153,19 @@ export default class CTimeLineRow extends Vue {
     position: absolute;
     top: 0;
     background: rgba(0, 0, 0, 0.2);
-    z-index: 4;
+    z-index: 10;
+
+    &.instrument-mouse {
+      cursor: text;
+    }
+
+    &.instrument-move {
+      cursor: ew-resize;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 60, 0.2);
+    }
   }
 }
 </style>
