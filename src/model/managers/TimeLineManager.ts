@@ -1,7 +1,9 @@
 import { SampleManager } from './SampleManager';
 
 import bus from '@/model/Bus';
-
+/**
+ * Class for manipulate timeline
+ */
 export class TimeLineManager {
   private _sampleManager: SampleManager;
 
@@ -16,7 +18,9 @@ export class TimeLineManager {
   constructor(sampleManager: SampleManager) {
     this._sampleManager = sampleManager;
   }
-
+  /**
+   * Property for starting or stopping playing
+   */
   public set isPlaying(playing: boolean) {
     this._isPlaying = playing;
     bus.fire('playPause');
@@ -49,39 +53,62 @@ export class TimeLineManager {
       window.requestAnimationFrame(callback);
     }
   }
-
-  public get isPlaying() {
+  /**
+   * return is Playing now status
+   */
+  public get isPlaying(): boolean {
     return this._isPlaying;
   }
 
+  /**
+   * Property for changing zoom of timeline
+   */
   public set pps(pps: number) {
     this._pps = pps;
     bus.fire('ppsChanged');
   }
 
-  public get pps() {
+  /**
+   * Get current zoom of timeline
+   */
+  public get pps(): number {
     return this._pps;
   }
 
+  /**
+   * Set total volume of timeline in range from 0 to 1
+   */
   public set volume(volume: number) {
     this._volume = volume;
     bus.fire('volumeChanged');
   }
 
-  public get volume() {
+  /**
+   * Get total volume of timeline in range from 0 to 1
+   */
+  public get volume(): number {
     return this._volume;
   }
 
+  /**
+   * Set current time in seconds
+   */
   public set time(time: number) {
     this._time = Math.min(time * 1000, this._sampleManager.maxTime * 1000);
     bus.fire('seeked');
   }
 
-  public get time() {
+  /**
+   * Get current time in seconds
+   */
+  public get time(): number {
     return this._time / 1000;
   }
 
-  public scrollToCursor() {
+  /**
+   * Fire scrollToCursor event
+   */
+  public scrollToCursor(): void {
     bus.fire('scrollToCursor');
   }
 }
