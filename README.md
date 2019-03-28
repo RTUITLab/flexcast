@@ -15,6 +15,8 @@ In current time project contains only basic functional: adding from pc (or from 
 In future project can be extended for using VST plugins, users system, podcasts streaming and like system.
 
 Pre-architecture:
+
+
 ![pre-architecture](https://files.rtuitlab.ru/flexcast/diagram.png "Pre-architecture")
 
 
