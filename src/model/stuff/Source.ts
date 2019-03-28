@@ -3,6 +3,7 @@ import { Beats } from './Beats';
  * Wrapper for song
  */
 export class Source {
+
   /**
    * @property name of song file
    */
@@ -11,7 +12,9 @@ export class Source {
    * dedoded data of song
    */
   public data: AudioBuffer;
-
+  /**
+   * Beats of source, can be null while calculating
+   */
   public beats?: Beats;
 
   constructor(name: string, data: AudioBuffer) {

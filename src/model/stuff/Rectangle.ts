@@ -1,3 +1,6 @@
+/**
+ * Interface for presenting one rectangle of song(TimeLine)
+ */
 export interface IRectangle {
   offsetTop: number;
   offsetLeft: number;
@@ -5,7 +8,18 @@ export interface IRectangle {
   height: number;
 }
 
+/**
+ * Class Rectangle, presents 2D rectangle
+ */
 export class Rectangle implements IRectangle {
+
+  public get offsetRight(): number {
+    return this.offsetLeft + this.width;
+  }
+
+  public get offsetBottom(): number {
+    return this.offsetTop + this.height;
+  }
   public offsetTop: number = 0;
   public offsetLeft: number = 0;
   public width: number = 0;
@@ -22,14 +36,20 @@ export class Rectangle implements IRectangle {
     this.height = data.height;
   }
 
-  public findIntersection(other: Rectangle): Rectangle | undefined {
+
+  /**
+   * Find intersection between that rectangle and another
+   * @param other other Rectangle for finding intersecrton
+   * @returns Rectangle of intersection or null, if intersection was not found
+   */
+  public findIntersection(other: Rectangle): Rectangle | null {
     if (
       other.offsetLeft >= this.offsetRight ||
       other.offsetRight <= this.offsetLeft ||
       other.offsetBottom >= this.offsetTop ||
       other.offsetTop <= this.offsetLeft
     ) {
-      return;
+      return null;
     }
 
     const left = Math.max(this.offsetLeft, other.offsetLeft);
@@ -45,6 +65,11 @@ export class Rectangle implements IRectangle {
     });
   }
 
+  /**
+   * Find intersection between that rectangle and another in horizontal projection
+   * @param other other Rectangle for finding intersecrton
+   * @returns Rectangle of intersection or null, if intersection was not found
+   */
   public findHorizontalIntersection(other: Rectangle): Rectangle | undefined {
     if (
       other.offsetLeft >= this.offsetRight ||
@@ -63,7 +88,11 @@ export class Rectangle implements IRectangle {
       height: other.height
     });
   }
-
+  /**
+   * Find intersection between that rectangle and another in horizontal projection
+   * @param other other Rectangle for finding intersecrton
+   * @returns Rectangle of intersection or null, if intersection was not found
+   */
   public findVerticalIntersection(other: Rectangle): Rectangle | undefined {
     if (
       other.offsetBottom >= this.offsetTop ||
@@ -81,13 +110,5 @@ export class Rectangle implements IRectangle {
       width: other.width,
       height: top - bottom
     });
-  }
-
-  public get offsetRight() {
-    return this.offsetLeft + this.width;
-  }
-
-  public get offsetBottom() {
-    return this.offsetTop + this.height;
   }
 }

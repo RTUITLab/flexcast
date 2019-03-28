@@ -22,19 +22,22 @@ export class SourceHandle {
     return this._source;
   }
 
+  /**
+   * Offset by X
+   */
+  public pageX: number;
+
+  /**
+   * Pffset by Y
+   */
+  public pageY: number;
+
   constructor(source: Source, x: number, y: number) {
     this.pageX = x;
     this.pageY = y;
     this._source = source;
   }
-  /**
-   * Offset by X
-   */
-  public pageX: number;
-  /**
-   * Pffset by Y
-   */
-  public pageY: number;
+
 }
 
 
