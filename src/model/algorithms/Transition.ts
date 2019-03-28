@@ -1,9 +1,19 @@
+/**
+ * Class with functions for generate transitions
+ */
 export class Transition {
+
+  /**
+   * Generate exponential values up
+   * @param start Start of exponent function
+   * @param current Current value
+   * @param duration Duration for generation
+   */
   public static generateExponentialIn(
     start: number,
     current: number,
     duration: number
-  ) {
+  ): number[] {
     const N = 50;
     const step = duration / N;
 
@@ -16,11 +26,17 @@ export class Transition {
       });
   }
 
+  /**
+   * Generate exponential values down
+   * @param start Start of exponent function
+   * @param current Current value
+   * @param duration Duration for generation
+   */
   public static generateExponentialOut(
     start: number,
     current: number,
     duration: number
-  ) {
+  ): number[] {
     const N = 50;
     const step = duration / N;
 

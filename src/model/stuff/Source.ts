@@ -9,7 +9,7 @@ export class Source {
    */
   public name: string;
   /**
-   * dedoded data of song
+   * Decoded data of song
    */
   public data: AudioBuffer;
   /**

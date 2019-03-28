@@ -68,7 +68,7 @@ export class SampleManager {
   }
 
   /**
-   * Retuirn all samples
+   * Return all samples
    */
   public get samples(): Sample[] {
     return this._samples;

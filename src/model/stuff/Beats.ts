@@ -1,5 +1,5 @@
 /**
- * Data class for stora beats for song
+ * Data class for store beats for song
  */
 export class Beats {
   constructor(

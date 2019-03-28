@@ -39,7 +39,7 @@ export class Rectangle implements IRectangle {
 
   /**
    * Find intersection between that rectangle and another
-   * @param other other Rectangle for finding intersecrton
+   * @param other other Rectangle for finding intersection
    * @returns Rectangle of intersection or null, if intersection was not found
    */
   public findIntersection(other: Rectangle): Rectangle | null {
@@ -67,7 +67,7 @@ export class Rectangle implements IRectangle {
 
   /**
    * Find intersection between that rectangle and another in horizontal projection
-   * @param other other Rectangle for finding intersecrton
+   * @param other other Rectangle for finding intersection
    * @returns Rectangle of intersection or null, if intersection was not found
    */
   public findHorizontalIntersection(other: Rectangle): Rectangle | undefined {
@@ -90,7 +90,7 @@ export class Rectangle implements IRectangle {
   }
   /**
    * Find intersection between that rectangle and another in horizontal projection
-   * @param other other Rectangle for finding intersecrton
+   * @param other other Rectangle for finding intersection
    * @returns Rectangle of intersection or null, if intersection was not found
    */
   public findVerticalIntersection(other: Rectangle): Rectangle | undefined {

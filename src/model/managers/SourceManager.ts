@@ -8,7 +8,7 @@ import bus from '@/model/Bus';
 
 
 /**
- * Class for handling song on a timelien
+ * Class for handling song on a TimeLine
  */
 export class SourceHandle {
   /**
@@ -28,7 +28,7 @@ export class SourceHandle {
   public pageX: number;
 
   /**
-   * Pffset by Y
+   * Offset by Y
    */
   public pageY: number;
 
@@ -93,7 +93,7 @@ export class SourceManager {
   }
   /**
    * Start using new SourceHandle
-   * @param handle handle wich will bew used
+   * @param handle handle which the will bew used
    */
   public startHandle(handle: SourceHandle): void {
     this._sourceHandle = handle;
@@ -129,8 +129,8 @@ export class SourceManager {
     return this._sourceHandle != null;
   }
   /**
-   * Function for decoding BLOB feiles to AudioBuffer
-   * @param data Blob file from network or filder
+   * Function for decoding BLOB files to AudioBuffer
+   * @param data Blob file from network or files
    * @returns Decoded audio buffer
    */
   private async loadAudioBuffer(data: Blob): Promise<AudioBuffer> {

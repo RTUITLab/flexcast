@@ -28,7 +28,7 @@ export class Sample {
    */
   public fadeInOffset: number = 0;
   /**
-   * Dutarion of fade in
+   * Duration of fade in
    */
   public fadeInDuration: number = 0;
   /**
@@ -36,7 +36,7 @@ export class Sample {
    */
   public fadeOutDuration: number = 0;
   /**
-   * Dutarion of fade in
+   * Duration of fade in
    */
   public fadeOutOffset: number = 0;
   /**
@@ -46,7 +46,7 @@ export class Sample {
     return this.duration > 0;
   }
   /**
-   * Conmstuctor, create sample with 0 offset with source
+   * Create sample with 0 offset with source
    * @param source Source of new sample
    */
   constructor(source: Source) {
