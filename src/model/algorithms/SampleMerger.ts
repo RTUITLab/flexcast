@@ -1,11 +1,12 @@
 import { Beats } from '@/model/stuff/Beats';
 import { Sample } from '@/model/stuff/Sample';
+
 /**
- * Class for merge samples
+ * Class for merging samples
  */
 export class SampleMerger {
   /**
-   * Method for merging samples, calculate best merge offset, using beats information
+   * Method for merging samples. Calculate best merge offset using beats information
    */
   public static mergeSamples(samples: Sample[], matchLevel: number = 5): void {
     if (samples.length < 2) {

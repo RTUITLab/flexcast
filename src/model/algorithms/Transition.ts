@@ -1,5 +1,5 @@
 /**
- * Class with functions for generate transitions
+ * Class with functions for generating transitions
  */
 export class Transition {
 

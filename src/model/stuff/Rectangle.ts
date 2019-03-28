@@ -1,5 +1,5 @@
 /**
- * Interface for presenting one rectangle of song(TimeLine)
+ * Interface for presenting one rectangle
  */
 export interface IRectangle {
   offsetTop: number;
@@ -9,7 +9,7 @@ export interface IRectangle {
 }
 
 /**
- * Class Rectangle, presents 2D rectangle
+ * Class Rectangle, presents 2D rectangle (used in rendering)
  */
 export class Rectangle implements IRectangle {
 
@@ -70,12 +70,12 @@ export class Rectangle implements IRectangle {
    * @param other other Rectangle for finding intersection
    * @returns Rectangle of intersection or null, if intersection was not found
    */
-  public findHorizontalIntersection(other: Rectangle): Rectangle | undefined {
+  public findHorizontalIntersection(other: Rectangle): Rectangle | null {
     if (
       other.offsetLeft >= this.offsetRight ||
       other.offsetRight <= this.offsetLeft
     ) {
-      return;
+      return null;
     }
 
     const left = Math.max(this.offsetLeft, other.offsetLeft);
@@ -88,17 +88,18 @@ export class Rectangle implements IRectangle {
       height: other.height
     });
   }
+
   /**
-   * Find intersection between that rectangle and another in horizontal projection
+   * Find intersection between that rectangle and another in vertical projection
    * @param other other Rectangle for finding intersection
    * @returns Rectangle of intersection or null, if intersection was not found
    */
-  public findVerticalIntersection(other: Rectangle): Rectangle | undefined {
+  public findVerticalIntersection(other: Rectangle): Rectangle | null {
     if (
       other.offsetBottom >= this.offsetTop ||
       other.offsetTop <= this.offsetLeft
     ) {
-      return;
+      return null;
     }
 
     const top = Math.max(this.offsetTop, other.offsetTop);

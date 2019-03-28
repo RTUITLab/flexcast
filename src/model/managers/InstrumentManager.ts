@@ -3,7 +3,7 @@ import bus from '@/model/Bus';
 export type InstrumentType = 'mouse' | 'move' | 'remove';
 
 /**
- * Class for choosing and managing work instruments
+ * Class for instruments managing
  */
 export class InstrumentManager {
   private _instrument: InstrumentType = 'mouse';

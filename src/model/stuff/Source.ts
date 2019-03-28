@@ -1,17 +1,19 @@
 import { Beats } from './Beats';
+
 /**
  * Wrapper for song
  */
 export class Source {
-
   /**
    * @property name of song file
    */
-  public name: string;
+  public name: string
+;
   /**
    * Decoded data of song
    */
   public data: AudioBuffer;
+
   /**
    * Beats of source, can be null while calculating
    */

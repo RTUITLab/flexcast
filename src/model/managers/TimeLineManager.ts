@@ -1,8 +1,9 @@
 import { SampleManager } from './SampleManager';
 
 import bus from '@/model/Bus';
+
 /**
- * Class for manipulate timeline
+ * Class for manipulating timeline
  */
 export class TimeLineManager {
   private _sampleManager: SampleManager;
@@ -18,8 +19,9 @@ export class TimeLineManager {
   constructor(sampleManager: SampleManager) {
     this._sampleManager = sampleManager;
   }
+
   /**
-   * Property for starting or stopping playing
+   * Property for playing/pausing
    */
   public set isPlaying(playing: boolean) {
     this._isPlaying = playing;
@@ -53,15 +55,13 @@ export class TimeLineManager {
       window.requestAnimationFrame(callback);
     }
   }
-  /**
-   * return is Playing now status
-   */
+
   public get isPlaying(): boolean {
     return this._isPlaying;
   }
 
   /**
-   * Property for changing zoom of timeline
+   * Property for changing zoom (pixels per second) of timeline
    */
   public set pps(pps: number) {
     this._pps = pps;
@@ -69,7 +69,7 @@ export class TimeLineManager {
   }
 
   /**
-   * Get current zoom of timeline
+   * Get current timeline zoom (pixels per second)
    */
   public get pps(): number {
     return this._pps;

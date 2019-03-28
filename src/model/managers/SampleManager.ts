@@ -50,6 +50,7 @@ export class SampleManager {
     this.updateTime();
     bus.fire('samplesChanged');
   }
+
   /**
    * Remove sample
    * @param sample sample to remove
@@ -83,6 +84,7 @@ export class SampleManager {
       return end > max ? end : max;
     }, 0);
   }
+
   /**
    * Get max time of TimeLine
    */

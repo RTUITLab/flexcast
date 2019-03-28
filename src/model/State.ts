@@ -44,6 +44,7 @@ export class State {
     return this._timeLineManager;
   }
 }
+
 /**
  * Singleton state for all application
  */

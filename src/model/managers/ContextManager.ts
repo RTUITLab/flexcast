@@ -1,8 +1,9 @@
 /**
- * Class for sorting AudioContext
+ * Class for storing AudioContext
  */
 export class ContextManager {
   private _context = new AudioContext();
+
   /**
    * Get current AudioContext
    */

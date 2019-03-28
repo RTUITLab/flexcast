@@ -6,15 +6,15 @@ import { Beats } from '@/model/stuff/Beats';
 
 import bus from '@/model/Bus';
 
-
 /**
- * Class for handling song on a TimeLine
+ * Class for handling new song on a TimeLine
  */
 export class SourceHandle {
   /**
    * Source of the song
    */
   private _source: Source;
+
   /**
    * Get current Source
    */
@@ -37,13 +37,11 @@ export class SourceHandle {
     this.pageY = y;
     this._source = source;
   }
-
 }
 
 
 /**
  * Class for managing resources.
- * Downloading and adding from browser.
  */
 export class SourceManager {
   private _contextManager: ContextManager;
@@ -54,11 +52,10 @@ export class SourceManager {
   constructor(contextManager: ContextManager) {
     this._contextManager = contextManager;
   }
+
   /**
    * Add new song from file or by link
-   * @param inputSource - if typeof string - it was used as url
-   * and content by url will be loaded
-   * if typeof File - function will use a content of that file
+   * @param inputSource url for file downloading or file itself
    */
   public async addSource(inputSource: string | File): Promise<void> {
     let raw: Blob;
@@ -87,10 +84,10 @@ export class SourceManager {
     bus.fire('sourcesChanged');
   }
 
-
   public get sources(): Source[] {
     return this._sources;
   }
+
   /**
    * Start using new SourceHandle
    * @param handle handle which the will bew used
@@ -99,6 +96,7 @@ export class SourceManager {
     this._sourceHandle = handle;
     bus.fire('handleStarted');
   }
+
   /**
    * Clear current SourceHandle
    */
@@ -106,8 +104,9 @@ export class SourceManager {
     this._sourceHandle = null;
     bus.fire('handleFinished');
   }
+
   /**
-   * Move position of current SourceHandle
+   * Update position of current SourceHandle
    * @param x position x
    * @param y position y
    */
@@ -128,9 +127,10 @@ export class SourceManager {
   public get hasHandle(): boolean {
     return this._sourceHandle != null;
   }
+
   /**
    * Function for decoding BLOB files to AudioBuffer
-   * @param data Blob file from network or files
+   * @param data audio file BLOB
    * @returns Decoded audio buffer
    */
   private async loadAudioBuffer(data: Blob): Promise<AudioBuffer> {
@@ -148,7 +148,7 @@ export class SourceManager {
   }
 
   /**
-   * Function for finding beats (picks) in song
+   * Function for finding beats (peaks) in song
    * @param data Audio buffer of sound
    * @returns array of beat times, in seconds
    */
@@ -206,6 +206,9 @@ export class SourceManager {
       { min: data[0], max: data[0] }
     );
 
+    // 0.8 is just a magic constant. For some songs it is 
+    // enough, for another is it too low.
+    // TODO: calculate this number from data
     return min + (max - min) * 0.8;
   }
 }

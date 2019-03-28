@@ -14,6 +14,7 @@ type BusEvent =
   | 'instrumentChanged';
 
 type BusEventHandler = () => void;
+
 /**
  * General events bus
  */
@@ -56,6 +57,7 @@ export class Bus {
     }
   }
 }
+
 /**
  * Singleton bus for all application
  */
