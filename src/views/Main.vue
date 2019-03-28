@@ -29,11 +29,11 @@ import { Sample } from '@/model/stuff/Sample';
 export default class Home extends Vue {
   created() {
     const testSources = [
-      'https://files.rtuitlab.ru/green-light.mp3',
-      'https://files.rtuitlab.ru/veerus.mp3',
-      'https://files.rtuitlab.ru/Bang.mp3',
-      'https://files.rtuitlab.ru/WantYou.mp3',
-      'https://files.rtuitlab.ru/wecallforlove.mp3'
+      'https://files.rtuitlab.ru/flexcast/samples/green-light.mp3',
+      'https://files.rtuitlab.ru/flexcast/samples/veerus.mp3',
+      'https://files.rtuitlab.ru/flexcast/samples/Bang.mp3',
+      'https://files.rtuitlab.ru/flexcast/samples/WantYou.mp3',
+      'https://files.rtuitlab.ru/flexcast/samples/wecallforlove.mp3'
     ];
 
     testSources.forEach((track) => {

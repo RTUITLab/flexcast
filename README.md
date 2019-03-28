@@ -1,4 +1,4 @@
-# flexcast
+# flexcast - Project for sampling, merging and manipulate music directly in you browser.
 
 ## Project setup
 ```
@@ -7,23 +7,16 @@ npm install
 
 ### Compiles and hot-reloads for development
 ```
-npm run serve
+npm start
 ```
 
-### Compiles and minifies for production
-```
-npm run build
-```
+In current time project contains only basic functional: adding from pc (or from internet) mp3 files, and merge all songs as one.
 
-### Run your tests
-```
-npm run test
-```
+In future project can be extended for using VST plugins, users system, podcasts streaming and like system.
 
-### Lints and fixes files
-```
-npm run lint
-```
+Pre-architecture:
+![pre-architecture](https://files.rtuitlab.ru/flexcast/diagram.png "Pre-architecture")
+
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
