@@ -6,10 +6,31 @@ import { Beats } from '@/model/stuff/Beats';
 
 import bus from '@/model/Bus';
 
+
+/**
+ * Class for handling song on a TimeLine
+ */
 export class SourceHandle {
-  public pageX: number;
-  public pageY: number;
+  /**
+   * Source of the song
+   */
   private _source: Source;
+  /**
+   * Get current Source
+   */
+  public get source(): Source {
+    return this._source;
+  }
+
+  /**
+   * Offset by X
+   */
+  public pageX: number;
+
+  /**
+   * Offset by Y
+   */
+  public pageY: number;
 
   constructor(source: Source, x: number, y: number) {
     this.pageX = x;
@@ -17,11 +38,13 @@ export class SourceHandle {
     this._source = source;
   }
 
-  public get source() {
-    return this._source;
-  }
 }
 
+
+/**
+ * Class for managing resources.
+ * Downloading and adding from browser.
+ */
 export class SourceManager {
   private _contextManager: ContextManager;
 
@@ -31,8 +54,13 @@ export class SourceManager {
   constructor(contextManager: ContextManager) {
     this._contextManager = contextManager;
   }
-
-  public async addSource(inputSource: string | File) {
+  /**
+   * Add new song from file or by link
+   * @param inputSource - if typeof string - it was used as url
+   * and content by url will be loaded
+   * if typeof File - function will use a content of that file
+   */
+  public async addSource(inputSource: string | File): Promise<void> {
     let raw: Blob;
     let name: string;
 
@@ -59,21 +87,31 @@ export class SourceManager {
     bus.fire('sourcesChanged');
   }
 
-  public get sources() {
+
+  public get sources(): Source[] {
     return this._sources;
   }
-
-  public startHandle(handle: SourceHandle) {
+  /**
+   * Start using new SourceHandle
+   * @param handle handle which the will bew used
+   */
+  public startHandle(handle: SourceHandle): void {
     this._sourceHandle = handle;
     bus.fire('handleStarted');
   }
-
-  public stopHandle() {
+  /**
+   * Clear current SourceHandle
+   */
+  public stopHandle(): void {
     this._sourceHandle = null;
     bus.fire('handleFinished');
   }
-
-  public moveHandle(x: number, y: number) {
+  /**
+   * Move position of current SourceHandle
+   * @param x position x
+   * @param y position y
+   */
+  public moveHandle(x: number, y: number): void {
     if (this._sourceHandle == null) {
       return;
     }
@@ -83,15 +121,19 @@ export class SourceManager {
     bus.fire('handleMoved');
   }
 
-  public get sourceHandle() {
+  public get sourceHandle(): SourceHandle | null {
     return this._sourceHandle;
   }
 
-  public get hasHandle() {
+  public get hasHandle(): boolean {
     return this._sourceHandle != null;
   }
-
-  private async loadAudioBuffer(data: Blob) {
+  /**
+   * Function for decoding BLOB files to AudioBuffer
+   * @param data Blob file from network or files
+   * @returns Decoded audio buffer
+   */
+  private async loadAudioBuffer(data: Blob): Promise<AudioBuffer> {
     const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
       const fileReader = new FileReader();
 
@@ -105,7 +147,12 @@ export class SourceManager {
     return await this._contextManager.context.decodeAudioData(arrayBuffer);
   }
 
-  private async processAudioBuffer(data: AudioBuffer) {
+  /**
+   * Function for finding beats (picks) in song
+   * @param data Audio buffer of sound
+   * @returns array of beat times, in seconds
+   */
+  private async processAudioBuffer(data: AudioBuffer): Promise<number[]> {
     const options = {
       numberOfChannels: data.numberOfChannels,
       length: data.length,
@@ -137,7 +184,7 @@ export class SourceManager {
 
     const peaksArray: number[] = [];
     const length = data.length;
-    for (let i = 0; i < length; ) {
+    for (let i = 0; i < length;) {
       if (filteredData[i] > threshold) {
         peaksArray.push(i / data.sampleRate);
         i += 10000;
@@ -148,7 +195,7 @@ export class SourceManager {
     return peaksArray;
   }
 
-  private calculateThreshold(data: Float32Array) {
+  private calculateThreshold(data: Float32Array): number {
     const { min, max } = data.reduce(
       (minMax, v) => {
         return {

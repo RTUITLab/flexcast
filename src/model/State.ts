@@ -4,6 +4,9 @@ import { ContextManager } from './managers/ContextManager';
 import { SampleManager } from './managers/SampleManager';
 import { SourceManager } from './managers/SourceManager';
 
+/**
+ * Class for storing all states
+ */
 export class State {
   private _contextManager: ContextManager;
   private _sourceManager: SourceManager;
@@ -21,26 +24,28 @@ export class State {
     this._timeLineManager = new TimeLineManager(this._sampleManager);
   }
 
-  public get contextManager() {
+  public get contextManager(): ContextManager {
     return this._contextManager;
   }
 
-  public get sourceManager() {
+  public get sourceManager(): SourceManager {
     return this._sourceManager;
   }
 
-  public get sampleManager() {
+  public get sampleManager(): SampleManager {
     return this._sampleManager;
   }
 
-  public get instrumentManager() {
+  public get instrumentManager(): InstrumentManager {
     return this._instrumentManager;
   }
 
-  public get timelineManager() {
+  public get timelineManager(): TimeLineManager {
     return this._timeLineManager;
   }
 }
-
+/**
+ * Singleton state for all application
+ */
 const state = new State();
 export default state;

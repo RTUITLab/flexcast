@@ -22,6 +22,22 @@
       "ban-keywords",
       "check-format",
       "allow-leading-underscore"
+    ],
+    "typedef": [
+      true,
+      "call-signature",
+      "property-declaration"
+    ],
+    "member-ordering": [
+      true,
+      {
+        "order": [
+          "public-static-field",
+          "public-instance-field",
+          "public-constructor",
+          "public-instance-method"
+        ]
+      }
     ]
   }
 }
