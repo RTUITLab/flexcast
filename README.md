@@ -10,7 +10,7 @@ npm install
 npm start
 ```
 
-In current time project contains only basic functional: adding from pc (or from internet) mp3 files, and merge all songs as one.
+Сurrently time project contains only basic functional: adding from pc (or from internet) mp3 files, and merge all songs as one.
 
 In future project can be extended for using VST plugins, users system, podcasts streaming and like system.
 
