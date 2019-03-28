@@ -6,9 +6,22 @@ import { Beats } from '@/model/stuff/Beats';
 
 import bus from '@/model/Bus';
 
+
+/**
+ * Class for handling song on a timelien
+ */
 export class SourceHandle {
+  /**
+   * Offset by X
+   */
   public pageX: number;
+  /**
+   * Pffset by Y
+   */
   public pageY: number;
+  /**
+   * Source of the song
+   */
   private _source: Source;
 
   constructor(source: Source, x: number, y: number) {
@@ -22,6 +35,11 @@ export class SourceHandle {
   }
 }
 
+
+/**
+ * Class for managing resources.
+ * Downloading and adding from browser.
+ */
 export class SourceManager {
   private _contextManager: ContextManager;
 
@@ -31,7 +49,12 @@ export class SourceManager {
   constructor(contextManager: ContextManager) {
     this._contextManager = contextManager;
   }
-
+  /**
+   * 
+   * @param inputSource - if typeof string - it was used as url
+   * and content by url will be loaded
+   * if typeof File - function will use a content of that file
+   */
   public async addSource(inputSource: string | File) {
     let raw: Blob;
     let name: string;
@@ -59,20 +82,30 @@ export class SourceManager {
     bus.fire('sourcesChanged');
   }
 
+
   public get sources() {
     return this._sources;
   }
-
+ /**
+  * Start using new SourceHandle
+  * @param handle handle wich will bew used
+  */
   public startHandle(handle: SourceHandle) {
     this._sourceHandle = handle;
     bus.fire('handleStarted');
   }
-
+ /**
+  * Clear current SourceHandle
+  */
   public stopHandle() {
     this._sourceHandle = null;
     bus.fire('handleFinished');
   }
-
+  /**
+   * Move position of current SourceHandle
+   * @param x position x
+   * @param y position y
+   */
   public moveHandle(x: number, y: number) {
     if (this._sourceHandle == null) {
       return;
@@ -90,8 +123,11 @@ export class SourceManager {
   public get hasHandle() {
     return this._sourceHandle != null;
   }
-
-  private async loadAudioBuffer(data: Blob) {
+  /**
+   * Function for decoding BLOB feiles to AudioBuffer
+   * @param data 
+   */
+  private async loadAudioBuffer(data: Blob):AudioBuffer {
     const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
       const fileReader = new FileReader();
 
