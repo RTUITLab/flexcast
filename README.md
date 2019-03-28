@@ -1,4 +1,7 @@
-# flexcast - Project for sampling, merging and manipulate music directly in you browser.
+# flexcast - Application for sampling, merging and manipulating music directly in you browser.
+
+## Requirements
+Only Node.js
 
 ## Project setup
 ```
@@ -10,7 +13,12 @@ npm install
 npm start
 ```
 
-Сurrently time project contains only basic functional: adding from pc (or from internet) mp3 files, and merge all songs as one.
+### Build for production
+```
+npm run build
+```
+
+Сurrently project contains only basic functional: adding music files from pc (or from internet) and merging them into one in specified order.
 
 In future project can be extended for using VST plugins, users system, podcasts streaming and like system.
 
