@@ -1,4 +1,4 @@
-# flexcast - Application for sampling, merging and manipulating music directly in you browser.
+# flexcast - Application for sampling, merging and manipulating music directly in your browser.
 
 ## Requirements
 Only Node.js
