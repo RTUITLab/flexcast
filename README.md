@@ -13,6 +13,8 @@ npm install
 npm start
 ```
 
+It will be locally hosted in `http://127.0.0.1:8080`
+
 ### Build for production
 ```
 npm run build
