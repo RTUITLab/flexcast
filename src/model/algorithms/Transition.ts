@@ -5,6 +5,10 @@ export class Transition {
 
   /**
    * Generate exponential values up
+   * @remarks
+   * tanh transition
+   * Visualization plot:
+   * {@link https://www.desmos.com/calculator/2sq9xizfkm}
    * @param start Start of exponent function
    * @param current Current value
    * @param duration Duration for generation
@@ -28,6 +32,10 @@ export class Transition {
 
   /**
    * Generate exponential values down
+   * @remarks
+   * tanh transition
+   * Visualization plot:
+   * {@link https://www.desmos.com/calculator/2sq9xizfkm}
    * @param start Start of exponent function
    * @param current Current value
    * @param duration Duration for generation
